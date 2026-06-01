@@ -24,6 +24,7 @@ The goal is not to chase trends. The goal is to ship useful tools, keep the engi
 | Repository | Notes |
 | --- | --- |
 | [agent-meeting-notes](https://github.com/dyrc9/agent-meeting-notes) | Long-audio meeting transcription and AI meeting notes harness. Splits multi-hour recordings, transcribes chunks, and produces structured summaries. |
+| [xhs-content-agent](https://github.com/dyrc9/xhs-content-agent) | CLI content studio for Xiaohongshu / RedNote creators. Generates drafts, calendars, publish packages, and quality checks with human review. |
 | [dyrc9.github.io](https://github.com/dyrc9/dyrc9.github.io) | Personal site and long-term public surface. |
 | [console-chat-gpt](https://github.com/dyrc9/console-chat-gpt) | Python CLI experiments around AI chat APIs. |
 | [cwym](https://github.com/dyrc9/cwym) | Computer networking project and message-oriented programming practice. |
