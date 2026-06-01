@@ -1,34 +1,36 @@
 # dyrc9 - AI Agent / Harness Engineering
 
-I am building toward AI Agent and Harness Engineering: the layer where agents are tested, instrumented, evaluated, connected to tools, and made reliable enough to use in real workflows.
+I build small, practical products around AI Agent and Harness Engineering: the layer where agents are tested, instrumented, evaluated, connected to tools, and made reliable enough to use in real workflows.
 
-My current work is still early, but the direction is clear:
+The goal is not to chase trends. The goal is to ship useful tools, keep the engineering surface honest, and turn this profile into a public record of products that compound over time.
 
-- AI agent harnesses, tool-use workflows, and evaluation loops
-- Python and CLI tools for model-driven automation
-- Practical integrations around chat, web, and developer workflows
-- Systems fundamentals: Linux, networking, and security-oriented experiments
+- AI agent harnesses and workflow runners
+- long-running, inspectable model pipelines
+- evaluation loops, traces, and regression checks
+- CLI-first automation tools
+- systems and security fundamentals underneath the agent layer
 
 ## Current Focus
 
 | Area | What I am exploring |
 | --- | --- |
-| Agent Harness | test environments, task runners, tool orchestration, replayable workflows |
-| Evaluation | behavior checks, regression suites, trace review, success criteria |
-| Automation | CLI utilities, local agents, workflow glue, lightweight dashboards |
+| Agent Harness | task runners, provider contracts, tool orchestration, replayable workflows |
+| Evaluation | behavior checks, summary quality, regression suites, trace review |
+| Automation | CLI utilities, local agents, workflow glue, durable artifacts |
 | Systems | networking, Linux internals, security experiments, observability |
 
-## Projects
+## Products
 
 | Repository | Notes |
 | --- | --- |
+| [agent-meeting-notes](https://github.com/dyrc9/agent-meeting-notes) | Long-audio meeting transcription and AI meeting notes harness. Splits multi-hour recordings, transcribes chunks, and produces structured summaries. |
 | [dyrc9.github.io](https://github.com/dyrc9/dyrc9.github.io) | Personal site and long-term public surface. |
 | [console-chat-gpt](https://github.com/dyrc9/console-chat-gpt) | Python CLI experiments around AI chat APIs. |
 | [cwym](https://github.com/dyrc9/cwym) | Computer networking project and message-oriented programming practice. |
 | [CS353Project2](https://github.com/dyrc9/CS353Project2) | Linux kernel lab work. |
 | [Kitsune_prp](https://github.com/dyrc9/Kitsune_prp) | Security and intrusion-detection related exploration. |
 
-Older forks and course repositories are being cleaned up as I turn this profile into a more intentional engineering record.
+Older forks and course repositories are being cleaned up as this profile becomes more product-focused.
 
 ## Stack I Am Using More
 
@@ -45,14 +47,14 @@ Older forks and course repositories are being cleaned up as I turn this profile 
 
 ![Top languages](https://github-readme-stats.vercel.app/api/top-langs/?username=dyrc9&layout=compact&hide_border=true)
 
-## Direction
+## Build Direction
 
-I want this profile to become a public lab notebook for AI agent infrastructure:
+I want this profile to become a public lab for AI agent infrastructure:
 
-- small, reproducible harnesses
-- agent task benchmarks and test cases
-- tool-use demos with clear traces
+- small products that solve real workflow problems
+- reproducible harnesses and benchmarks
+- tool-use demos with clear traces and durable outputs
 - notes on failures, fixes, and engineering tradeoffs
-- practical projects that make agents easier to trust
+- practical projects that make agents easier to trust and operate
 
 If you are working on AI agents, evaluation, automation, or developer tooling, this is the direction I am moving in.
