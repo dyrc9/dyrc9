@@ -23,6 +23,7 @@ The goal is not to chase trends. The goal is to ship useful tools, keep the engi
 
 | Repository | Notes |
 | --- | --- |
+| [sushi-agent](https://github.com/dyrc9/sushi-agent) | Thin TypeScript + Rust agent runtime for embedding LLM providers, skills, MCP, and fast local tools into existing systems. |
 | [agent-meeting-notes](https://github.com/dyrc9/agent-meeting-notes) | Long-audio meeting transcription and AI meeting notes harness. Splits multi-hour recordings, transcribes chunks, and produces structured summaries. |
 | [xhs-content-agent](https://github.com/dyrc9/xhs-content-agent) | CLI content studio for Xiaohongshu / RedNote creators. Generates drafts, calendars, publish packages, and quality checks with human review. |
 | [dyrc9.github.io](https://github.com/dyrc9/dyrc9.github.io) | Personal site and long-term public surface. |
@@ -37,6 +38,7 @@ Older forks and course repositories are being cleaned up as this profile becomes
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
+![Rust](https://img.shields.io/badge/Rust-000000?style=flat&logo=rust&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=000)
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat&logo=linux&logoColor=000)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat&logo=githubactions&logoColor=white)

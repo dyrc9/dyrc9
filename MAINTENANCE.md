@@ -35,6 +35,17 @@ Supporting themes:
 
 ## Next Repositories To Build
 
+### sushi-agent
+
+A thin TypeScript + Rust agent runtime that can be embedded into existing systems.
+
+Initial scope:
+
+- TypeScript SDK for model providers, skills, tools, traces, and MCP stdio clients
+- Rust utilities for fast local file and text operations
+- examples that show how to plug the runtime into real products
+- scheduled CI and dependency maintenance
+
 ### agent-harness-lab
 
 A small public lab for testing AI agents against repeatable tasks.
@@ -74,6 +85,7 @@ Possible scope:
 - One small commit that improves profile clarity or project quality.
 - One note about an agent, harness, evaluation, or automation idea.
 - One repository cleanup action: README, topics, description, license, or pinned order.
+- Keep `sushi-agent` moving with one runtime, provider, MCP, or tooling improvement.
 
 ## Monthly Rhythm
 
