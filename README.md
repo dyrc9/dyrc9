@@ -1,38 +1,44 @@
 # dyrc9 - AI Agent / Harness Engineering
 
-I build small, practical products around AI Agent and Harness Engineering: the layer where agents are tested, instrumented, evaluated, connected to tools, and made reliable enough to use in real workflows.
+I build practical agent tooling: the layer where models are wired into real workflows, checked for regressions, and forced to produce durable outputs instead of demos.
 
-The goal is not to chase trends. The goal is to ship useful tools, keep the engineering surface honest, and turn this profile into a public record of products that compound over time.
+This profile is a product portfolio, not a trend scrapbook. The repos below are the ones that support that story.
 
-- AI agent harnesses and workflow runners
-- long-running, inspectable model pipelines
+- agent harnesses and workflow runners
 - evaluation loops, traces, and regression checks
-- CLI-first automation tools
+- CLI-first automations with durable artifacts
 - systems and security fundamentals underneath the agent layer
 
 ## Current Focus
 
-| Area | What I am exploring |
+| Area | Current direction |
 | --- | --- |
-| Agent Harness | task runners, provider contracts, tool orchestration, replayable workflows |
+| Agent Harness | provider contracts, tool orchestration, replayable workflows |
 | Evaluation | behavior checks, summary quality, regression suites, trace review |
-| Automation | CLI utilities, local agents, workflow glue, durable artifacts |
-| Systems | networking, Linux internals, security experiments, observability |
+| Automation | local CLI tools, batch jobs, inspectable outputs |
+| Systems | networking, Linux internals, observability, security experiments |
 
-## Products
+## Active Product Surface
 
-| Repository | Notes |
+| Repository | Product value | Status |
+| --- | --- | --- |
+| [sushi-agent](https://github.com/dyrc9/sushi-agent) | TypeScript + Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems. | Core runtime bet |
+| [agent-meeting-notes](https://github.com/dyrc9/agent-meeting-notes) | Long-audio transcription and meeting-notes harness with chunking, structured outputs, and exportable artifacts. | Working CLI product |
+| [xhs-content-agent](https://github.com/dyrc9/xhs-content-agent) | Human-reviewed content pipeline for Xiaohongshu / RedNote drafts, calendars, and publish packages. | Working CLI product |
+| [dyrc9.github.io](https://github.com/dyrc9/dyrc9.github.io) | Personal site and long-term public surface for demos, notes, and portfolio framing. | Public narrative layer |
+
+## Supporting Repositories
+
+These are relevant because they reinforce the engineering foundation behind the product work:
+
+| Repository | Why it matters |
 | --- | --- |
-| [sushi-agent](https://github.com/dyrc9/sushi-agent) | Thin TypeScript + Rust agent runtime for embedding LLM providers, skills, MCP, and fast local tools into existing systems. |
-| [agent-meeting-notes](https://github.com/dyrc9/agent-meeting-notes) | Long-audio meeting transcription and AI meeting notes harness. Splits multi-hour recordings, transcribes chunks, and produces structured summaries. |
-| [xhs-content-agent](https://github.com/dyrc9/xhs-content-agent) | CLI content studio for Xiaohongshu / RedNote creators. Generates drafts, calendars, publish packages, and quality checks with human review. |
-| [dyrc9.github.io](https://github.com/dyrc9/dyrc9.github.io) | Personal site and long-term public surface. |
-| [console-chat-gpt](https://github.com/dyrc9/console-chat-gpt) | Python CLI experiments around AI chat APIs. |
-| [cwym](https://github.com/dyrc9/cwym) | Computer networking project and message-oriented programming practice. |
-| [CS353Project2](https://github.com/dyrc9/CS353Project2) | Linux kernel lab work. |
+| [console-chat-gpt](https://github.com/dyrc9/console-chat-gpt) | Early CLI experiments around chat APIs and terminal interaction patterns. |
+| [cwym](https://github.com/dyrc9/cwym) | Networking and message-oriented systems practice. |
+| [CS353Project2](https://github.com/dyrc9/CS353Project2) | Linux kernel lab work and low-level systems exposure. |
 | [Kitsune_prp](https://github.com/dyrc9/Kitsune_prp) | Security and intrusion-detection related exploration. |
 
-Older forks and course repositories are being cleaned up as this profile becomes more product-focused.
+Older forks and course repositories are being cleaned up so the profile stays product-focused.
 
 ## Stack I Am Using More
 
@@ -44,20 +50,20 @@ Older forks and course repositories are being cleaned up as this profile becomes
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat&logo=githubactions&logoColor=white)
 ![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=flat&logo=openai&logoColor=white)
 
-## Profile Stats
+## What This Portfolio Optimizes For
 
-![GitHub stats](https://github-readme-stats.vercel.app/api?username=dyrc9&show_icons=true&hide_title=true&hide_border=true)
+- small tools that solve a real workflow problem
+- reproducible runs instead of screenshot-only demos
+- outputs that can be inspected, exported, and reviewed later
+- engineering notes that explain tradeoffs, failures, and fixes
+- products that make agent behavior easier to trust and operate
 
-![Top languages](https://github-readme-stats.vercel.app/api/top-langs/?username=dyrc9&layout=compact&hide_border=true)
+## Next Build Targets
 
-## Build Direction
+The next layer I want to make more explicit in public repos:
 
-I want this profile to become a public lab for AI agent infrastructure:
+- a compact agent harness lab with repeatable tasks and pass/fail checks
+- stronger trace and evaluation surfaces around tool use
+- more examples that show how these CLIs fit into actual operator workflows
 
-- small products that solve real workflow problems
-- reproducible harnesses and benchmarks
-- tool-use demos with clear traces and durable outputs
-- notes on failures, fixes, and engineering tradeoffs
-- practical projects that make agents easier to trust and operate
-
-If you are working on AI agents, evaluation, automation, or developer tooling, this is the direction I am moving in.
+If you are working on AI agents, evaluation, automation, or developer tooling, this is the direction I am building toward.
