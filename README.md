@@ -27,6 +27,22 @@ This profile is a product portfolio, not a trend scrapbook. The repos below are 
 | [xhs-content-agent](https://github.com/dyrc9/xhs-content-agent) | Human-reviewed content pipeline for Xiaohongshu / RedNote drafts, calendars, and publish packages. | Working CLI product |
 | [dyrc9.github.io](https://github.com/dyrc9/dyrc9.github.io) | Personal site and long-term public surface for demos, notes, and portfolio framing. | Public narrative layer |
 
+## Shipped Workflow Slices
+
+These are the smallest product surfaces that already exist and show how I think about operator-facing agent tooling:
+
+| Workflow | Current surface | Why it matters |
+| --- | --- | --- |
+| Long meeting -> inspectable notes | `agent-meeting-notes run`, `probe`, `estimate`, `inspect`, `check` | Turns a multi-hour recording into reusable transcript and summary artifacts with preflight and quality gates. |
+| Raw idea -> publish package | `xhs-content-agent draft`, `calendar`, `titles`, `inspect`, `check` | Treats creator work as a reviewable pipeline instead of one-shot prompting or unsafe automation. |
+| Provider/tool runtime embedding | `sushi-agent` runtime + local tools | Pushes toward a reusable execution layer where models, tools, and traces can be composed inside real systems. |
+
+The common pattern is consistent:
+
+```text
+source input -> staged processing -> inspectable artifact -> quality gate -> human or system decision
+```
+
 ## Supporting Repositories
 
 These are relevant because they reinforce the engineering foundation behind the product work:
@@ -57,6 +73,7 @@ Older forks and course repositories are being cleaned up so the profile stays pr
 - outputs that can be inspected, exported, and reviewed later
 - engineering notes that explain tradeoffs, failures, and fixes
 - products that make agent behavior easier to trust and operate
+- product slices that can be expanded into stronger harnesses, evals, and runtime surfaces
 
 ## Next Build Targets
 
