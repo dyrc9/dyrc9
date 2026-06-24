@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "owner": "dyrc9",
+  "positioning": {
+    "headline": "AI Agent / Harness Engineering",
+    "summary": "Practical agent tooling focused on replayable workflows, inspectable artifacts, and operator-facing quality gates."
+  },
+  "workflow_pattern": [
+    "source input",
+    "staged processing",
+    "inspectable artifact",
+    "quality gate",
+    "human or system decision"
+  ],
+  "active_products": [
+    {
+      "repo": "sushi-agent",
+      "url": "https://github.com/dyrc9/sushi-agent",
+      "category": "runtime",
+      "status": "core-runtime-bet",
+      "value": "TypeScript and Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems.",
+      "surface": [
+        "provider abstraction",
+        "tool orchestration",
+        "runtime embedding"
+      ]
+    },
+    {
+      "repo": "agent-meeting-notes",
+      "url": "https://github.com/dyrc9/agent-meeting-notes",
+      "category": "workflow-cli",
+      "status": "working-cli-product",
+      "value": "Long-audio transcription and meeting-notes harness with chunking, structured outputs, and exportable artifacts.",
+      "surface": [
+        "run",
+        "probe",
+        "estimate",
+        "inspect",
+        "check"
+      ],
+      "local_quickstart": [
+        "agent-meeting-notes doctor",
+        "agent-meeting-notes run path/to/meeting.mp3 --out runs/meeting-001 --transcriber openai --summarizer openai"
+      ]
+    },
+    {
+      "repo": "xhs-content-agent",
+      "url": "https://github.com/dyrc9/xhs-content-agent",
+      "category": "workflow-cli",
+      "status": "working-cli-product",
+      "value": "Human-reviewed content pipeline for Xiaohongshu and RedNote drafts, calendars, and publish packages.",
+      "surface": [
+        "draft",
+        "calendar",
+        "titles",
+        "inspect",
+        "check"
+      ],
+      "local_quickstart": [
+        "xhs-content-agent doctor",
+        "xhs-content-agent draft examples/idea.md --out runs/first-note"
+      ],
+      "safety_notes": [
+        "no engagement manipulation",
+        "no policy-evasion automation",
+        "manual review before publishing"
+      ]
+    },
+    {
+      "repo": "dyrc9.github.io",
+      "url": "https://github.com/dyrc9/dyrc9.github.io",
+      "category": "public-surface",
+      "status": "public-narrative-layer",
+      "value": "Personal site and long-term public surface for demos, notes, and portfolio framing.",
+      "surface": [
+        "demos",
+        "notes",
+        "portfolio framing"
+      ]
+    }
+  ],
+  "supporting_repositories": [
+    {
+      "repo": "console-chat-gpt",
+      "url": "https://github.com/dyrc9/console-chat-gpt",
+      "why": "Early CLI experiments around chat APIs and terminal interaction patterns."
+    },
+    {
+      "repo": "cwym",
+      "url": "https://github.com/dyrc9/cwym",
+      "why": "Networking and message-oriented systems practice."
+    },
+    {
+      "repo": "CS353Project2",
+      "url": "https://github.com/dyrc9/CS353Project2",
+      "why": "Linux kernel lab work and low-level systems exposure."
+    },
+    {
+      "repo": "Kitsune_prp",
+      "url": "https://github.com/dyrc9/Kitsune_prp",
+      "why": "Security and intrusion-detection related exploration."
+    }
+  ],
+  "next_build_targets": [
+    "compact agent harness lab with repeatable tasks and pass/fail checks",
+    "stronger trace and evaluation surfaces around tool use",
+    "more examples that show how CLI products fit into actual operator workflows"
+  ]
+}

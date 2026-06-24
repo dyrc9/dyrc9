@@ -43,6 +43,18 @@ The common pattern is consistent:
 source input -> staged processing -> inspectable artifact -> quality gate -> human or system decision
 ```
 
+## Portfolio Manifest
+
+The profile now also has a machine-readable index in [`portfolio.json`](./portfolio.json).
+
+It exists so this repository can drive more than a static README:
+
+- the public site can reuse one source of truth for featured repos
+- automation can diff actual product status instead of scraping prose
+- future harness or eval work can select example products by category and surface area
+
+That keeps the narrative and the product inventory aligned as the portfolio changes.
+
 ## Supporting Repositories
 
 These are relevant because they reinforce the engineering foundation behind the product work:
