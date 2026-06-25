@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/dyrc9/dyrc9/raw/main/portfolio.schema.json",
+  "title": "dyrc9 portfolio manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "owner",
+    "positioning",
+    "workflow_pattern",
+    "active_products",
+    "supporting_repositories",
+    "next_build_targets"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1
+    },
+    "positioning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "headline",
+        "summary"
+      ],
+      "properties": {
+        "headline": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "workflow_pattern": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "active_products": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/activeProduct"
+      }
+    },
+    "supporting_repositories": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/supportingRepository"
+      }
+    },
+    "next_build_targets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "$defs": {
+    "stringList": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "activeProduct": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "url",
+        "category",
+        "status",
+        "value",
+        "surface"
+      ],
+      "properties": {
+        "repo": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://github\\.com/[^/]+/[^/]+$"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "runtime",
+            "workflow-cli",
+            "public-surface"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1
+        },
+        "surface": {
+          "$ref": "#/$defs/stringList"
+        },
+        "local_quickstart": {
+          "$ref": "#/$defs/stringList"
+        },
+        "safety_notes": {
+          "$ref": "#/$defs/stringList"
+        }
+      }
+    },
+    "supportingRepository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "url",
+        "why"
+      ],
+      "properties": {
+        "repo": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://github\\.com/[^/]+/[^/]+$"
+        },
+        "why": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

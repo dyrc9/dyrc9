@@ -55,6 +55,14 @@ It exists so this repository can drive more than a static README:
 
 That keeps the narrative and the product inventory aligned as the portfolio changes.
 
+The manifest is now checked by a local validator and CI:
+
+```bash
+python scripts/validate_portfolio.py
+```
+
+The structure contract lives in [`portfolio.schema.json`](./portfolio.schema.json), while the validator enforces a few repository-specific rules such as owner/repo URL consistency and `local_quickstart` coverage for workflow CLIs.
+
 ## Supporting Repositories
 
 These are relevant because they reinforce the engineering foundation behind the product work:

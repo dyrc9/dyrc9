@@ -1,0 +1,31 @@
+name: validate-portfolio
+
+on:
+  push:
+    paths:
+      - "portfolio.json"
+      - "portfolio.schema.json"
+      - "scripts/validate_portfolio.py"
+      - ".github/workflows/validate-portfolio.yml"
+  pull_request:
+    paths:
+      - "portfolio.json"
+      - "portfolio.schema.json"
+      - "scripts/validate_portfolio.py"
+      - ".github/workflows/validate-portfolio.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate portfolio manifest
+        run: python scripts/validate_portfolio.py
