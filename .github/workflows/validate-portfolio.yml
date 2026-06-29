@@ -3,15 +3,19 @@ name: validate-portfolio
 on:
   push:
     paths:
+      - "README.md"
       - "portfolio.json"
       - "portfolio.schema.json"
       - "scripts/validate_portfolio.py"
+      - "tests/test_validate_portfolio.py"
       - ".github/workflows/validate-portfolio.yml"
   pull_request:
     paths:
+      - "README.md"
       - "portfolio.json"
       - "portfolio.schema.json"
       - "scripts/validate_portfolio.py"
+      - "tests/test_validate_portfolio.py"
       - ".github/workflows/validate-portfolio.yml"
 
 jobs:
@@ -29,3 +33,6 @@ jobs:
 
       - name: Validate portfolio manifest
         run: python scripts/validate_portfolio.py
+
+      - name: Run validator tests
+        run: python -m unittest tests.test_validate_portfolio

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -10,12 +11,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PORTFOLIO_PATH = ROOT / "portfolio.json"
 SCHEMA_PATH = ROOT / "portfolio.schema.json"
+README_PATH = ROOT / "README.md"
 ALLOWED_ACTIVE_CATEGORIES = {"runtime", "workflow-cli", "public-surface"}
 
 
 def load_json(path: Path) -> object:
     with path.open("r", encoding="utf-8") as handle:
         return json.load(handle)
+
+
+def load_text(path: Path) -> str:
+    with path.open("r", encoding="utf-8") as handle:
+        return handle.read()
 
 
 def ensure(condition: bool, message: str, errors: list[str]) -> None:
@@ -64,6 +71,56 @@ def validate_top_level(data: dict[str, object], errors: list[str]) -> None:
 
 def expected_github_url(owner: str, repo: str) -> str:
     return f"https://github.com/{owner}/{repo}"
+
+
+def normalize_comparable_text(value: str) -> str:
+    collapsed = value.lower()
+    collapsed = collapsed.replace("+", " and ")
+    collapsed = collapsed.replace("/", " and ")
+    collapsed = collapsed.replace("&", " and ")
+    collapsed = re.sub(r"[^a-z0-9]+", " ", collapsed)
+    return " ".join(collapsed.split())
+
+
+def extract_markdown_table(readme_text: str, heading: str) -> tuple[list[str], list[list[str]]] | None:
+    lines = readme_text.splitlines()
+    heading_line = f"## {heading}"
+
+    for index, line in enumerate(lines):
+        if line.strip() != heading_line:
+            continue
+
+        cursor = index + 1
+        while cursor < len(lines):
+            stripped = lines[cursor].strip()
+            if stripped.startswith("## "):
+                return None
+            if lines[cursor].lstrip().startswith("|"):
+                table_lines: list[str] = []
+                while cursor < len(lines) and lines[cursor].lstrip().startswith("|"):
+                    table_lines.append(lines[cursor].strip())
+                    cursor += 1
+
+                if len(table_lines) < 2:
+                    return None
+
+                parsed_rows = [parse_markdown_row(table_line) for table_line in table_lines]
+                return parsed_rows[0], parsed_rows[2:]
+
+            cursor += 1
+
+    return None
+
+
+def parse_markdown_row(line: str) -> list[str]:
+    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+
+
+def parse_markdown_link(cell: str) -> tuple[str, str] | None:
+    match = re.fullmatch(r"\[([^\]]+)\]\(([^)]+)\)", cell.strip())
+    if not match:
+        return None
+    return match.group(1), match.group(2)
 
 
 def validate_active_products(owner: str, products: object, errors: list[str]) -> None:
@@ -131,6 +188,113 @@ def validate_supporting_repositories(owner: str, repositories: object, errors: l
             ensure(url == expected_github_url(owner, repo), f"{prefix}.url must match owner/repo: {expected_github_url(owner, repo)}", errors)
 
 
+def validate_readme(readme_text: str, data: dict[str, object], errors: list[str]) -> None:
+    active_products = data.get("active_products")
+    if isinstance(data.get("owner"), str) and isinstance(active_products, list):
+        validate_readme_active_products_table(data["owner"], active_products, readme_text, errors)
+
+    supporting_repositories = data.get("supporting_repositories")
+    if isinstance(data.get("owner"), str) and isinstance(supporting_repositories, list):
+        validate_readme_supporting_repositories_table(data["owner"], supporting_repositories, readme_text, errors)
+
+
+def validate_readme_active_products_table(owner: str, products: list[object], readme_text: str, errors: list[str]) -> None:
+    parsed = extract_markdown_table(readme_text, "Active Product Surface")
+    ensure(parsed is not None, "README is missing the 'Active Product Surface' table", errors)
+    if parsed is None:
+        return
+
+    headers, rows = parsed
+    ensure(headers == ["Repository", "Product value", "Status"], "README 'Active Product Surface' headers must be: Repository | Product value | Status", errors)
+    ensure(len(rows) == len(products), "README 'Active Product Surface' row count must match active_products", errors)
+    if len(rows) != len(products):
+        return
+
+    for index, (product, row) in enumerate(zip(products, rows)):
+        prefix = f"README Active Product Surface row {index + 1}"
+        if not isinstance(product, dict):
+            errors.append(f"{prefix} cannot be validated because active_products[{index}] is not an object")
+            continue
+
+        ensure(len(row) == 3, f"{prefix} must have exactly 3 columns", errors)
+        if len(row) != 3:
+            continue
+
+        repo_cell, value_cell, status_cell = row
+        link = parse_markdown_link(repo_cell)
+        ensure(link is not None, f"{prefix} repository cell must be a Markdown link", errors)
+        if link is None:
+            continue
+
+        repo_label, repo_url = link
+        expected_repo = product.get("repo")
+        expected_url = product.get("url")
+        expected_value = product.get("value")
+        expected_status = product.get("status")
+
+        if isinstance(expected_repo, str):
+            ensure(repo_label == expected_repo, f"{prefix} repository label must be '{expected_repo}'", errors)
+        if isinstance(expected_url, str):
+            ensure(repo_url == expected_url == expected_github_url(owner, repo_label), f"{prefix} repository URL must match manifest owner/repo", errors)
+        if isinstance(expected_value, str):
+            ensure(
+                normalize_comparable_text(value_cell) == normalize_comparable_text(expected_value),
+                f"{prefix} product value must stay aligned with portfolio.json",
+                errors,
+            )
+        if isinstance(expected_status, str):
+            ensure(
+                normalize_comparable_text(status_cell) == normalize_comparable_text(expected_status),
+                f"{prefix} status must stay aligned with portfolio.json",
+                errors,
+            )
+
+
+def validate_readme_supporting_repositories_table(owner: str, repositories: list[object], readme_text: str, errors: list[str]) -> None:
+    parsed = extract_markdown_table(readme_text, "Supporting Repositories")
+    ensure(parsed is not None, "README is missing the 'Supporting Repositories' table", errors)
+    if parsed is None:
+        return
+
+    headers, rows = parsed
+    ensure(headers == ["Repository", "Why it matters"], "README 'Supporting Repositories' headers must be: Repository | Why it matters", errors)
+    ensure(len(rows) == len(repositories), "README 'Supporting Repositories' row count must match supporting_repositories", errors)
+    if len(rows) != len(repositories):
+        return
+
+    for index, (repository, row) in enumerate(zip(repositories, rows)):
+        prefix = f"README Supporting Repositories row {index + 1}"
+        if not isinstance(repository, dict):
+            errors.append(f"{prefix} cannot be validated because supporting_repositories[{index}] is not an object")
+            continue
+
+        ensure(len(row) == 2, f"{prefix} must have exactly 2 columns", errors)
+        if len(row) != 2:
+            continue
+
+        repo_cell, why_cell = row
+        link = parse_markdown_link(repo_cell)
+        ensure(link is not None, f"{prefix} repository cell must be a Markdown link", errors)
+        if link is None:
+            continue
+
+        repo_label, repo_url = link
+        expected_repo = repository.get("repo")
+        expected_url = repository.get("url")
+        expected_why = repository.get("why")
+
+        if isinstance(expected_repo, str):
+            ensure(repo_label == expected_repo, f"{prefix} repository label must be '{expected_repo}'", errors)
+        if isinstance(expected_url, str):
+            ensure(repo_url == expected_url == expected_github_url(owner, repo_label), f"{prefix} repository URL must match manifest owner/repo", errors)
+        if isinstance(expected_why, str):
+            ensure(
+                normalize_comparable_text(why_cell) == normalize_comparable_text(expected_why),
+                f"{prefix} why text must stay aligned with portfolio.json",
+                errors,
+            )
+
+
 def main() -> int:
     errors: list[str] = []
 
@@ -152,6 +316,12 @@ def main() -> int:
         print(f"invalid JSON in {SCHEMA_PATH}: {exc}", file=sys.stderr)
         return 1
 
+    try:
+        readme_text = load_text(README_PATH)
+    except FileNotFoundError:
+        print(f"missing file: {README_PATH}", file=sys.stderr)
+        return 1
+
     ensure(isinstance(data, dict), "portfolio.json must contain a top-level object", errors)
     if not isinstance(data, dict):
         for error in errors:
@@ -164,6 +334,7 @@ def main() -> int:
     if isinstance(owner, str):
         validate_active_products(owner, data.get("active_products"), errors)
         validate_supporting_repositories(owner, data.get("supporting_repositories"), errors)
+        validate_readme(readme_text, data, errors)
 
     if errors:
         for error in errors:

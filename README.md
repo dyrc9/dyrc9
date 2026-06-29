@@ -55,10 +55,11 @@ It exists so this repository can drive more than a static README:
 
 That keeps the narrative and the product inventory aligned as the portfolio changes.
 
-The manifest is now checked by a local validator and CI:
+The manifest and the README product tables are now checked by a local validator and CI:
 
 ```bash
 python scripts/validate_portfolio.py
+python -m unittest tests.test_validate_portfolio
 ```
 
 The structure contract lives in [`portfolio.schema.json`](./portfolio.schema.json), while the validator enforces a few repository-specific rules such as owner/repo URL consistency and `local_quickstart` coverage for workflow CLIs.
