@@ -45,6 +45,7 @@ def validate_top_level(data: dict[str, object], errors: list[str]) -> None:
         "positioning",
         "workflow_pattern",
         "active_products",
+        "shipped_workflow_slices",
         "supporting_repositories",
         "next_build_targets",
     }
@@ -66,6 +67,7 @@ def validate_top_level(data: dict[str, object], errors: list[str]) -> None:
         normalized = [item.strip() for item in workflow_pattern if isinstance(item, str)]
         ensure(len(normalized) == len(set(normalized)), "workflow_pattern entries must be unique", errors)
 
+    validate_workflow_slices(data.get("shipped_workflow_slices"), errors)
     ensure(is_string_list(data.get("next_build_targets")), "next_build_targets must be a non-empty list of strings", errors)
 
 
@@ -188,10 +190,36 @@ def validate_supporting_repositories(owner: str, repositories: object, errors: l
             ensure(url == expected_github_url(owner, repo), f"{prefix}.url must match owner/repo: {expected_github_url(owner, repo)}", errors)
 
 
+def validate_workflow_slices(workflow_slices: object, errors: list[str]) -> None:
+    ensure(isinstance(workflow_slices, list) and bool(workflow_slices), "shipped_workflow_slices must be a non-empty list", errors)
+    if not isinstance(workflow_slices, list):
+        return
+
+    seen_workflows: set[str] = set()
+    for index, workflow_slice in enumerate(workflow_slices):
+        prefix = f"shipped_workflow_slices[{index}]"
+        ensure(isinstance(workflow_slice, dict), f"{prefix} must be an object", errors)
+        if not isinstance(workflow_slice, dict):
+            continue
+
+        workflow = workflow_slice.get("workflow")
+        ensure(is_non_empty_string(workflow), f"{prefix}.workflow must be a non-empty string", errors)
+        ensure(is_non_empty_string(workflow_slice.get("current_surface")), f"{prefix}.current_surface must be a non-empty string", errors)
+        ensure(is_non_empty_string(workflow_slice.get("why_it_matters")), f"{prefix}.why_it_matters must be a non-empty string", errors)
+
+        if isinstance(workflow, str):
+            ensure(workflow not in seen_workflows, f"{prefix}.workflow must be unique: {workflow}", errors)
+            seen_workflows.add(workflow)
+
+
 def validate_readme(readme_text: str, data: dict[str, object], errors: list[str]) -> None:
     active_products = data.get("active_products")
     if isinstance(data.get("owner"), str) and isinstance(active_products, list):
         validate_readme_active_products_table(data["owner"], active_products, readme_text, errors)
+
+    workflow_slices = data.get("shipped_workflow_slices")
+    if isinstance(workflow_slices, list):
+        validate_readme_workflow_slices_table(workflow_slices, readme_text, errors)
 
     supporting_repositories = data.get("supporting_repositories")
     if isinstance(data.get("owner"), str) and isinstance(supporting_repositories, list):
@@ -295,6 +323,53 @@ def validate_readme_supporting_repositories_table(owner: str, repositories: list
             )
 
 
+def validate_readme_workflow_slices_table(workflow_slices: list[object], readme_text: str, errors: list[str]) -> None:
+    parsed = extract_markdown_table(readme_text, "Shipped Workflow Slices")
+    ensure(parsed is not None, "README is missing the 'Shipped Workflow Slices' table", errors)
+    if parsed is None:
+        return
+
+    headers, rows = parsed
+    ensure(headers == ["Workflow", "Current surface", "Why it matters"], "README 'Shipped Workflow Slices' headers must be: Workflow | Current surface | Why it matters", errors)
+    ensure(len(rows) == len(workflow_slices), "README 'Shipped Workflow Slices' row count must match shipped_workflow_slices", errors)
+    if len(rows) != len(workflow_slices):
+        return
+
+    for index, (workflow_slice, row) in enumerate(zip(workflow_slices, rows)):
+        prefix = f"README Shipped Workflow Slices row {index + 1}"
+        if not isinstance(workflow_slice, dict):
+            errors.append(f"{prefix} cannot be validated because shipped_workflow_slices[{index}] is not an object")
+            continue
+
+        ensure(len(row) == 3, f"{prefix} must have exactly 3 columns", errors)
+        if len(row) != 3:
+            continue
+
+        workflow_cell, current_surface_cell, why_cell = row
+        expected_workflow = workflow_slice.get("workflow")
+        expected_surface = workflow_slice.get("current_surface")
+        expected_why = workflow_slice.get("why_it_matters")
+
+        if isinstance(expected_workflow, str):
+            ensure(
+                normalize_comparable_text(workflow_cell) == normalize_comparable_text(expected_workflow),
+                f"{prefix} workflow text must stay aligned with portfolio.json",
+                errors,
+            )
+        if isinstance(expected_surface, str):
+            ensure(
+                normalize_comparable_text(current_surface_cell) == normalize_comparable_text(expected_surface),
+                f"{prefix} current surface text must stay aligned with portfolio.json",
+                errors,
+            )
+        if isinstance(expected_why, str):
+            ensure(
+                normalize_comparable_text(why_cell) == normalize_comparable_text(expected_why),
+                f"{prefix} why text must stay aligned with portfolio.json",
+                errors,
+            )
+
+
 def main() -> int:
     errors: list[str] = []
 
@@ -344,6 +419,7 @@ def main() -> int:
     print(
         "portfolio manifest OK: "
         f"{len(data['active_products'])} active products, "
+        f"{len(data['shipped_workflow_slices'])} workflow slices, "
         f"{len(data['supporting_repositories'])} supporting repositories, "
         f"{len(data['next_build_targets'])} next targets"
     )

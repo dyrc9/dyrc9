@@ -79,6 +79,23 @@
       ]
     }
   ],
+  "shipped_workflow_slices": [
+    {
+      "workflow": "Long meeting -> inspectable notes",
+      "current_surface": "agent-meeting-notes run, probe, estimate, inspect, check",
+      "why_it_matters": "Turns a multi-hour recording into reusable transcript and summary artifacts with preflight and quality gates."
+    },
+    {
+      "workflow": "Raw idea -> publish package",
+      "current_surface": "xhs-content-agent draft, calendar, titles, inspect, check",
+      "why_it_matters": "Treats creator work as a reviewable pipeline instead of one-shot prompting or unsafe automation."
+    },
+    {
+      "workflow": "Provider/tool runtime embedding",
+      "current_surface": "sushi-agent runtime and local tools",
+      "why_it_matters": "Pushes toward a reusable execution layer where models, tools, and traces can be composed inside real systems."
+    }
+  ],
   "supporting_repositories": [
     {
       "repo": "console-chat-gpt",

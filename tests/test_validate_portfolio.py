@@ -24,6 +24,13 @@ class ValidatePortfolioReadmeTests(unittest.TestCase):
                     "status": "working-cli-product",
                 }
             ],
+            "shipped_workflow_slices": [
+                {
+                    "workflow": "Raw idea to publish package",
+                    "current_surface": "demo-agent draft, inspect, check",
+                    "why_it_matters": "Turns a rough prompt into a reviewable package.",
+                }
+            ],
             "supporting_repositories": [
                 {
                     "repo": "systems-lab",
@@ -40,6 +47,12 @@ class ValidatePortfolioReadmeTests(unittest.TestCase):
 | Repository | Product value | Status |
 | --- | --- | --- |
 | [demo-agent](https://github.com/dyrc9/demo-agent) | TypeScript + Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems. | Working CLI product |
+
+## Shipped Workflow Slices
+
+| Workflow | Current surface | Why it matters |
+| --- | --- | --- |
+| Raw idea to publish package | demo-agent draft, inspect, check | Turns a rough prompt into a reviewable package. |
 
 ## Supporting Repositories
 
@@ -61,6 +74,12 @@ class ValidatePortfolioReadmeTests(unittest.TestCase):
 | --- | --- | --- |
 | [demo-agent](https://github.com/dyrc9/demo-agent) | TypeScript + Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems. | Prototype only |
 
+## Shipped Workflow Slices
+
+| Workflow | Current surface | Why it matters |
+| --- | --- | --- |
+| Raw idea to publish package | demo-agent draft, inspect, check | Turns a rough prompt into a reviewable package. |
+
 ## Supporting Repositories
 
 | Repository | Why it matters |
@@ -73,6 +92,35 @@ class ValidatePortfolioReadmeTests(unittest.TestCase):
 
         self.assertIn(
             "README Active Product Surface row 1 status must stay aligned with portfolio.json",
+            errors,
+        )
+
+    def test_validate_readme_rejects_drifted_workflow_surface(self) -> None:
+        readme_text = """
+## Active Product Surface
+
+| Repository | Product value | Status |
+| --- | --- | --- |
+| [demo-agent](https://github.com/dyrc9/demo-agent) | TypeScript + Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems. | Working CLI product |
+
+## Shipped Workflow Slices
+
+| Workflow | Current surface | Why it matters |
+| --- | --- | --- |
+| Raw idea to publish package | demo-agent run once | Turns a rough prompt into a reviewable package. |
+
+## Supporting Repositories
+
+| Repository | Why it matters |
+| --- | --- |
+| [systems-lab](https://github.com/dyrc9/systems-lab) | Linux kernel lab work and low-level systems exposure. |
+"""
+        errors: list[str] = []
+
+        MODULE.validate_readme(readme_text, self.data, errors)
+
+        self.assertIn(
+            "README Shipped Workflow Slices row 1 current surface text must stay aligned with portfolio.json",
             errors,
         )
 
