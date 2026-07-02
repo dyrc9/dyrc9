@@ -13,6 +13,8 @@ PORTFOLIO_PATH = ROOT / "portfolio.json"
 SCHEMA_PATH = ROOT / "portfolio.schema.json"
 README_PATH = ROOT / "README.md"
 ALLOWED_ACTIVE_CATEGORIES = {"runtime", "workflow-cli", "public-surface"}
+QUICKSTART_START_MARKER = "<!-- portfolio-quickstarts:start -->"
+QUICKSTART_END_MARKER = "<!-- portfolio-quickstarts:end -->"
 
 
 def load_json(path: Path) -> object:
@@ -125,6 +127,75 @@ def parse_markdown_link(cell: str) -> tuple[str, str] | None:
     return match.group(1), match.group(2)
 
 
+def render_quickstarts_section(products: list[object]) -> str:
+    lines = [
+        QUICKSTART_START_MARKER,
+        "",
+        "Use these local commands to demonstrate the operator-facing surfaces of the workflow CLIs:",
+        "",
+    ]
+
+    rendered_any = False
+    for product in products:
+        if not isinstance(product, dict):
+            continue
+
+        quickstart = product.get("local_quickstart")
+        if not is_string_list(quickstart):
+            continue
+
+        repo = product.get("repo")
+        value = product.get("value")
+        if not isinstance(repo, str) or not isinstance(value, str):
+            continue
+
+        rendered_any = True
+        lines.append(f"### `{repo}`")
+        lines.append("")
+        lines.append(value)
+        lines.append("")
+        lines.append("```bash")
+        lines.extend(quickstart)
+        lines.append("```")
+        lines.append("")
+
+    if not rendered_any:
+        lines.append("_No workflow CLI quickstarts are currently defined in the manifest._")
+        lines.append("")
+
+    lines.append(QUICKSTART_END_MARKER)
+    return "\n".join(lines)
+
+
+def replace_managed_section(readme_text: str, rendered_section: str) -> str:
+    pattern = re.compile(
+        rf"{re.escape(QUICKSTART_START_MARKER)}.*?{re.escape(QUICKSTART_END_MARKER)}",
+        re.DOTALL,
+    )
+    if not pattern.search(readme_text):
+        raise ValueError("README is missing portfolio quickstart markers")
+    return pattern.sub(rendered_section, readme_text, count=1)
+
+
+def validate_readme_quickstarts_section(products: list[object], readme_text: str, errors: list[str]) -> None:
+    rendered_section = render_quickstarts_section(products)
+    pattern = re.compile(
+        rf"{re.escape(QUICKSTART_START_MARKER)}.*?{re.escape(QUICKSTART_END_MARKER)}",
+        re.DOTALL,
+    )
+    match = pattern.search(readme_text)
+    ensure(match is not None, "README is missing the managed 'Local Quickstarts' section markers", errors)
+    if match is None:
+        return
+
+    current_section = match.group(0)
+    ensure(
+        current_section == rendered_section,
+        "README managed 'Local Quickstarts' section must be regenerated from portfolio.json",
+        errors,
+    )
+
+
 def validate_active_products(owner: str, products: object, errors: list[str]) -> None:
     ensure(isinstance(products, list) and bool(products), "active_products must be a non-empty list", errors)
     if not isinstance(products, list):
@@ -216,6 +287,7 @@ def validate_readme(readme_text: str, data: dict[str, object], errors: list[str]
     active_products = data.get("active_products")
     if isinstance(data.get("owner"), str) and isinstance(active_products, list):
         validate_readme_active_products_table(data["owner"], active_products, readme_text, errors)
+        validate_readme_quickstarts_section(active_products, readme_text, errors)
 
     workflow_slices = data.get("shipped_workflow_slices")
     if isinstance(workflow_slices, list):
@@ -370,7 +442,36 @@ def validate_readme_workflow_slices_table(workflow_slices: list[object], readme_
             )
 
 
-def main() -> int:
+def sync_readme(data: dict[str, object]) -> int:
+    active_products = data.get("active_products")
+    if not isinstance(active_products, list):
+        print("portfolio.json is missing a valid active_products list", file=sys.stderr)
+        return 1
+
+    try:
+        readme_text = load_text(README_PATH)
+    except FileNotFoundError:
+        print(f"missing file: {README_PATH}", file=sys.stderr)
+        return 1
+
+    rendered_section = render_quickstarts_section(active_products)
+    try:
+        updated_readme = replace_managed_section(readme_text, rendered_section)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    if updated_readme != readme_text:
+        README_PATH.write_text(updated_readme, encoding="utf-8")
+        print("synced README managed quickstarts from portfolio.json")
+    else:
+        print("README managed quickstarts already up to date")
+
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    argv = argv or sys.argv[1:]
     errors: list[str] = []
 
     try:
@@ -402,6 +503,9 @@ def main() -> int:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)
         return 1
+
+    if argv == ["--sync-readme"]:
+        return sync_readme(data)
 
     validate_top_level(data, errors)
 

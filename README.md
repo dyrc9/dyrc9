@@ -55,10 +55,37 @@ It exists so this repository can drive more than a static README:
 
 That keeps the narrative and the product inventory aligned as the portfolio changes.
 
+## Local Quickstarts
+
+<!-- portfolio-quickstarts:start -->
+
+Use these local commands to demonstrate the operator-facing surfaces of the workflow CLIs:
+
+### `agent-meeting-notes`
+
+Long-audio transcription and meeting-notes harness with chunking, structured outputs, and exportable artifacts.
+
+```bash
+agent-meeting-notes doctor
+agent-meeting-notes run path/to/meeting.mp3 --out runs/meeting-001 --transcriber openai --summarizer openai
+```
+
+### `xhs-content-agent`
+
+Human-reviewed content pipeline for Xiaohongshu and RedNote drafts, calendars, and publish packages.
+
+```bash
+xhs-content-agent doctor
+xhs-content-agent draft examples/idea.md --out runs/first-note
+```
+
+<!-- portfolio-quickstarts:end -->
+
 The manifest and the README product tables are now checked by a local validator and CI:
 
 ```bash
 python scripts/validate_portfolio.py
+python scripts/validate_portfolio.py --sync-readme
 python -m unittest tests.test_validate_portfolio
 ```
 

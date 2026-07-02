@@ -22,6 +22,10 @@ class ValidatePortfolioReadmeTests(unittest.TestCase):
                     "url": "https://github.com/dyrc9/demo-agent",
                     "value": "TypeScript and Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems.",
                     "status": "working-cli-product",
+                    "local_quickstart": [
+                        "demo-agent doctor",
+                        "demo-agent run sample.txt --out runs/demo-001",
+                    ],
                 }
             ],
             "shipped_workflow_slices": [
@@ -48,6 +52,23 @@ class ValidatePortfolioReadmeTests(unittest.TestCase):
 | --- | --- | --- |
 | [demo-agent](https://github.com/dyrc9/demo-agent) | TypeScript + Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems. | Working CLI product |
 
+## Local Quickstarts
+
+<!-- portfolio-quickstarts:start -->
+
+Use these local commands to demonstrate the operator-facing surfaces of the workflow CLIs:
+
+### `demo-agent`
+
+TypeScript and Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems.
+
+```bash
+demo-agent doctor
+demo-agent run sample.txt --out runs/demo-001
+```
+
+<!-- portfolio-quickstarts:end -->
+
 ## Shipped Workflow Slices
 
 | Workflow | Current surface | Why it matters |
@@ -73,6 +94,23 @@ class ValidatePortfolioReadmeTests(unittest.TestCase):
 | Repository | Product value | Status |
 | --- | --- | --- |
 | [demo-agent](https://github.com/dyrc9/demo-agent) | TypeScript + Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems. | Prototype only |
+
+## Local Quickstarts
+
+<!-- portfolio-quickstarts:start -->
+
+Use these local commands to demonstrate the operator-facing surfaces of the workflow CLIs:
+
+### `demo-agent`
+
+TypeScript and Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems.
+
+```bash
+demo-agent doctor
+demo-agent run sample.txt --out runs/demo-001
+```
+
+<!-- portfolio-quickstarts:end -->
 
 ## Shipped Workflow Slices
 
@@ -103,6 +141,23 @@ class ValidatePortfolioReadmeTests(unittest.TestCase):
 | --- | --- | --- |
 | [demo-agent](https://github.com/dyrc9/demo-agent) | TypeScript + Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems. | Working CLI product |
 
+## Local Quickstarts
+
+<!-- portfolio-quickstarts:start -->
+
+Use these local commands to demonstrate the operator-facing surfaces of the workflow CLIs:
+
+### `demo-agent`
+
+TypeScript and Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems.
+
+```bash
+demo-agent doctor
+demo-agent run sample.txt --out runs/demo-001
+```
+
+<!-- portfolio-quickstarts:end -->
+
 ## Shipped Workflow Slices
 
 | Workflow | Current surface | Why it matters |
@@ -121,6 +176,72 @@ class ValidatePortfolioReadmeTests(unittest.TestCase):
 
         self.assertIn(
             "README Shipped Workflow Slices row 1 current surface text must stay aligned with portfolio.json",
+            errors,
+        )
+
+    def test_render_quickstarts_section_renders_workflow_clis(self) -> None:
+        rendered = MODULE.render_quickstarts_section(self.data["active_products"])
+
+        self.assertEqual(
+            rendered,
+            """<!-- portfolio-quickstarts:start -->
+
+Use these local commands to demonstrate the operator-facing surfaces of the workflow CLIs:
+
+### `demo-agent`
+
+TypeScript and Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems.
+
+```bash
+demo-agent doctor
+demo-agent run sample.txt --out runs/demo-001
+```
+
+<!-- portfolio-quickstarts:end -->""",
+        )
+
+    def test_validate_readme_rejects_drifted_quickstart_section(self) -> None:
+        readme_text = """
+## Active Product Surface
+
+| Repository | Product value | Status |
+| --- | --- | --- |
+| [demo-agent](https://github.com/dyrc9/demo-agent) | TypeScript + Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems. | Working CLI product |
+
+## Local Quickstarts
+
+<!-- portfolio-quickstarts:start -->
+
+Use these local commands to demonstrate the operator-facing surfaces of the workflow CLIs:
+
+### `demo-agent`
+
+TypeScript and Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems.
+
+```bash
+demo-agent run once
+```
+
+<!-- portfolio-quickstarts:end -->
+
+## Shipped Workflow Slices
+
+| Workflow | Current surface | Why it matters |
+| --- | --- | --- |
+| Raw idea to publish package | demo-agent draft, inspect, check | Turns a rough prompt into a reviewable package. |
+
+## Supporting Repositories
+
+| Repository | Why it matters |
+| --- | --- |
+| [systems-lab](https://github.com/dyrc9/systems-lab) | Linux kernel lab work and low-level systems exposure. |
+"""
+        errors: list[str] = []
+
+        MODULE.validate_readme(readme_text, self.data, errors)
+
+        self.assertIn(
+            "README managed 'Local Quickstarts' section must be regenerated from portfolio.json",
             errors,
         )
 
