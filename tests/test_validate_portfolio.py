@@ -42,6 +42,10 @@ class ValidatePortfolioReadmeTests(unittest.TestCase):
                     "why": "Linux kernel lab work and low-level systems exposure.",
                 }
             ],
+            "next_build_targets": [
+                "compact harness lab with pass fail checks",
+                "stronger trace review surfaces",
+            ],
         }
 
     def test_validate_readme_accepts_equivalent_table_text(self) -> None:
@@ -80,6 +84,15 @@ demo-agent run sample.txt --out runs/demo-001
 | Repository | Why it matters |
 | --- | --- |
 | [systems-lab](https://github.com/dyrc9/systems-lab) | Linux kernel lab work and low-level systems exposure. |
+
+## Next Build Targets
+
+<!-- portfolio-next-targets:start -->
+
+- compact harness lab with pass fail checks
+- stronger trace review surfaces
+
+<!-- portfolio-next-targets:end -->
 """
         errors: list[str] = []
 
@@ -123,6 +136,15 @@ demo-agent run sample.txt --out runs/demo-001
 | Repository | Why it matters |
 | --- | --- |
 | [systems-lab](https://github.com/dyrc9/systems-lab) | Linux kernel lab work and low-level systems exposure. |
+
+## Next Build Targets
+
+<!-- portfolio-next-targets:start -->
+
+- compact harness lab with pass fail checks
+- stronger trace review surfaces
+
+<!-- portfolio-next-targets:end -->
 """
         errors: list[str] = []
 
@@ -169,6 +191,15 @@ demo-agent run sample.txt --out runs/demo-001
 | Repository | Why it matters |
 | --- | --- |
 | [systems-lab](https://github.com/dyrc9/systems-lab) | Linux kernel lab work and low-level systems exposure. |
+
+## Next Build Targets
+
+<!-- portfolio-next-targets:start -->
+
+- compact harness lab with pass fail checks
+- stronger trace review surfaces
+
+<!-- portfolio-next-targets:end -->
 """
         errors: list[str] = []
 
@@ -198,6 +229,19 @@ demo-agent run sample.txt --out runs/demo-001
 ```
 
 <!-- portfolio-quickstarts:end -->""",
+        )
+
+    def test_render_next_build_targets_section_renders_bullets(self) -> None:
+        rendered = MODULE.render_next_build_targets_section(self.data["next_build_targets"])
+
+        self.assertEqual(
+            rendered,
+            """<!-- portfolio-next-targets:start -->
+
+- compact harness lab with pass fail checks
+- stronger trace review surfaces
+
+<!-- portfolio-next-targets:end -->""",
         )
 
     def test_validate_readme_rejects_drifted_quickstart_section(self) -> None:
@@ -235,6 +279,15 @@ demo-agent run once
 | Repository | Why it matters |
 | --- | --- |
 | [systems-lab](https://github.com/dyrc9/systems-lab) | Linux kernel lab work and low-level systems exposure. |
+
+## Next Build Targets
+
+<!-- portfolio-next-targets:start -->
+
+- compact harness lab with pass fail checks
+- stronger trace review surfaces
+
+<!-- portfolio-next-targets:end -->
 """
         errors: list[str] = []
 
@@ -242,6 +295,60 @@ demo-agent run once
 
         self.assertIn(
             "README managed 'Local Quickstarts' section must be regenerated from portfolio.json",
+            errors,
+        )
+
+    def test_validate_readme_rejects_drifted_next_build_targets_section(self) -> None:
+        readme_text = """
+## Active Product Surface
+
+| Repository | Product value | Status |
+| --- | --- | --- |
+| [demo-agent](https://github.com/dyrc9/demo-agent) | TypeScript + Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems. | Working CLI product |
+
+## Local Quickstarts
+
+<!-- portfolio-quickstarts:start -->
+
+Use these local commands to demonstrate the operator-facing surfaces of the workflow CLIs:
+
+### `demo-agent`
+
+TypeScript and Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems.
+
+```bash
+demo-agent doctor
+demo-agent run sample.txt --out runs/demo-001
+```
+
+<!-- portfolio-quickstarts:end -->
+
+## Shipped Workflow Slices
+
+| Workflow | Current surface | Why it matters |
+| --- | --- | --- |
+| Raw idea to publish package | demo-agent draft, inspect, check | Turns a rough prompt into a reviewable package. |
+
+## Supporting Repositories
+
+| Repository | Why it matters |
+| --- | --- |
+| [systems-lab](https://github.com/dyrc9/systems-lab) | Linux kernel lab work and low-level systems exposure. |
+
+## Next Build Targets
+
+<!-- portfolio-next-targets:start -->
+
+- ship it fast
+
+<!-- portfolio-next-targets:end -->
+"""
+        errors: list[str] = []
+
+        MODULE.validate_readme(readme_text, self.data, errors)
+
+        self.assertIn(
+            "README managed 'Next Build Targets' section must be regenerated from portfolio.json",
             errors,
         )
 

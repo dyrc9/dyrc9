@@ -15,6 +15,8 @@ README_PATH = ROOT / "README.md"
 ALLOWED_ACTIVE_CATEGORIES = {"runtime", "workflow-cli", "public-surface"}
 QUICKSTART_START_MARKER = "<!-- portfolio-quickstarts:start -->"
 QUICKSTART_END_MARKER = "<!-- portfolio-quickstarts:end -->"
+NEXT_TARGETS_START_MARKER = "<!-- portfolio-next-targets:start -->"
+NEXT_TARGETS_END_MARKER = "<!-- portfolio-next-targets:end -->"
 
 
 def load_json(path: Path) -> object:
@@ -167,13 +169,30 @@ def render_quickstarts_section(products: list[object]) -> str:
     return "\n".join(lines)
 
 
-def replace_managed_section(readme_text: str, rendered_section: str) -> str:
+def render_next_build_targets_section(targets: list[object]) -> str:
+    lines = [
+        NEXT_TARGETS_START_MARKER,
+        "",
+    ]
+
+    if is_string_list(targets):
+        for target in targets:
+            lines.append(f"- {target}")
+    else:
+        lines.append("_No next build targets are currently defined in the manifest._")
+
+    lines.append("")
+    lines.append(NEXT_TARGETS_END_MARKER)
+    return "\n".join(lines)
+
+
+def replace_managed_section(readme_text: str, start_marker: str, end_marker: str, rendered_section: str) -> str:
     pattern = re.compile(
-        rf"{re.escape(QUICKSTART_START_MARKER)}.*?{re.escape(QUICKSTART_END_MARKER)}",
+        rf"{re.escape(start_marker)}.*?{re.escape(end_marker)}",
         re.DOTALL,
     )
     if not pattern.search(readme_text):
-        raise ValueError("README is missing portfolio quickstart markers")
+        raise ValueError(f"README is missing managed section markers: {start_marker} .. {end_marker}")
     return pattern.sub(rendered_section, readme_text, count=1)
 
 
@@ -192,6 +211,25 @@ def validate_readme_quickstarts_section(products: list[object], readme_text: str
     ensure(
         current_section == rendered_section,
         "README managed 'Local Quickstarts' section must be regenerated from portfolio.json",
+        errors,
+    )
+
+
+def validate_readme_next_build_targets_section(targets: list[object], readme_text: str, errors: list[str]) -> None:
+    rendered_section = render_next_build_targets_section(targets)
+    pattern = re.compile(
+        rf"{re.escape(NEXT_TARGETS_START_MARKER)}.*?{re.escape(NEXT_TARGETS_END_MARKER)}",
+        re.DOTALL,
+    )
+    match = pattern.search(readme_text)
+    ensure(match is not None, "README is missing the managed 'Next Build Targets' section markers", errors)
+    if match is None:
+        return
+
+    current_section = match.group(0)
+    ensure(
+        current_section == rendered_section,
+        "README managed 'Next Build Targets' section must be regenerated from portfolio.json",
         errors,
     )
 
@@ -296,6 +334,10 @@ def validate_readme(readme_text: str, data: dict[str, object], errors: list[str]
     supporting_repositories = data.get("supporting_repositories")
     if isinstance(data.get("owner"), str) and isinstance(supporting_repositories, list):
         validate_readme_supporting_repositories_table(data["owner"], supporting_repositories, readme_text, errors)
+
+    next_build_targets = data.get("next_build_targets")
+    if isinstance(next_build_targets, list):
+        validate_readme_next_build_targets_section(next_build_targets, readme_text, errors)
 
 
 def validate_readme_active_products_table(owner: str, products: list[object], readme_text: str, errors: list[str]) -> None:
@@ -448,24 +490,39 @@ def sync_readme(data: dict[str, object]) -> int:
         print("portfolio.json is missing a valid active_products list", file=sys.stderr)
         return 1
 
+    next_build_targets = data.get("next_build_targets")
+    if not isinstance(next_build_targets, list):
+        print("portfolio.json is missing a valid next_build_targets list", file=sys.stderr)
+        return 1
+
     try:
         readme_text = load_text(README_PATH)
     except FileNotFoundError:
         print(f"missing file: {README_PATH}", file=sys.stderr)
         return 1
 
-    rendered_section = render_quickstarts_section(active_products)
     try:
-        updated_readme = replace_managed_section(readme_text, rendered_section)
+        updated_readme = replace_managed_section(
+            readme_text,
+            QUICKSTART_START_MARKER,
+            QUICKSTART_END_MARKER,
+            render_quickstarts_section(active_products),
+        )
+        updated_readme = replace_managed_section(
+            updated_readme,
+            NEXT_TARGETS_START_MARKER,
+            NEXT_TARGETS_END_MARKER,
+            render_next_build_targets_section(next_build_targets),
+        )
     except ValueError as exc:
         print(str(exc), file=sys.stderr)
         return 1
 
     if updated_readme != readme_text:
         README_PATH.write_text(updated_readme, encoding="utf-8")
-        print("synced README managed quickstarts from portfolio.json")
+        print("synced README managed sections from portfolio.json")
     else:
-        print("README managed quickstarts already up to date")
+        print("README managed sections already up to date")
 
     return 0
 

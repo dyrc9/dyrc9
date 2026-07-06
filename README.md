@@ -127,8 +127,12 @@ Older forks and course repositories are being cleaned up so the profile stays pr
 
 The next layer I want to make more explicit in public repos:
 
-- a compact agent harness lab with repeatable tasks and pass/fail checks
+<!-- portfolio-next-targets:start -->
+
+- compact agent harness lab with repeatable tasks and pass/fail checks
 - stronger trace and evaluation surfaces around tool use
-- more examples that show how these CLIs fit into actual operator workflows
+- more examples that show how CLI products fit into actual operator workflows
+
+<!-- portfolio-next-targets:end -->
 
 If you are working on AI agents, evaluation, automation, or developer tooling, this is the direction I am building toward.
