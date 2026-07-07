@@ -129,6 +129,86 @@ def parse_markdown_link(cell: str) -> tuple[str, str] | None:
     return match.group(1), match.group(2)
 
 
+def humanize_slug(value: str) -> str:
+    token_map = {
+        "ai": "AI",
+        "cli": "CLI",
+        "mcp": "MCP",
+    }
+    return " ".join(token_map.get(token, token) for token in value.replace("_", "-").split("-"))
+
+
+def sentence_case_slug(value: str) -> str:
+    humanized = humanize_slug(value)
+    if not humanized:
+        return humanized
+    return humanized[0].upper() + humanized[1:]
+
+
+def render_active_products_table(owner: str, products: list[object]) -> str:
+    lines = [
+        "| Repository | Product value | Status |",
+        "| --- | --- | --- |",
+    ]
+
+    for product in products:
+        if not isinstance(product, dict):
+            continue
+
+        repo = product.get("repo")
+        value = product.get("value")
+        status = product.get("status")
+        if not isinstance(repo, str) or not isinstance(value, str) or not isinstance(status, str):
+            continue
+
+        lines.append(
+            f"| [{repo}]({expected_github_url(owner, repo)}) | {value} | {sentence_case_slug(status)} |"
+        )
+
+    return "\n".join(lines)
+
+
+def render_workflow_slices_table(workflow_slices: list[object]) -> str:
+    lines = [
+        "| Workflow | Current surface | Why it matters |",
+        "| --- | --- | --- |",
+    ]
+
+    for workflow_slice in workflow_slices:
+        if not isinstance(workflow_slice, dict):
+            continue
+
+        workflow = workflow_slice.get("workflow")
+        current_surface = workflow_slice.get("current_surface")
+        why_it_matters = workflow_slice.get("why_it_matters")
+        if not isinstance(workflow, str) or not isinstance(current_surface, str) or not isinstance(why_it_matters, str):
+            continue
+
+        lines.append(f"| {workflow} | {current_surface} | {why_it_matters} |")
+
+    return "\n".join(lines)
+
+
+def render_supporting_repositories_table(owner: str, repositories: list[object]) -> str:
+    lines = [
+        "| Repository | Why it matters |",
+        "| --- | --- |",
+    ]
+
+    for repository in repositories:
+        if not isinstance(repository, dict):
+            continue
+
+        repo = repository.get("repo")
+        why = repository.get("why")
+        if not isinstance(repo, str) or not isinstance(why, str):
+            continue
+
+        lines.append(f"| [{repo}]({expected_github_url(owner, repo)}) | {why} |")
+
+    return "\n".join(lines)
+
+
 def render_quickstarts_section(products: list[object]) -> str:
     lines = [
         QUICKSTART_START_MARKER,
@@ -194,6 +274,38 @@ def replace_managed_section(readme_text: str, start_marker: str, end_marker: str
     if not pattern.search(readme_text):
         raise ValueError(f"README is missing managed section markers: {start_marker} .. {end_marker}")
     return pattern.sub(rendered_section, readme_text, count=1)
+
+
+def replace_markdown_table(readme_text: str, heading: str, rendered_table: str) -> str:
+    heading_line = f"## {heading}"
+    lines = readme_text.splitlines()
+
+    for index, line in enumerate(lines):
+        if line.strip() != heading_line:
+            continue
+
+        table_start = None
+        cursor = index + 1
+        while cursor < len(lines):
+            stripped = lines[cursor].strip()
+            if stripped.startswith("## "):
+                break
+            if lines[cursor].lstrip().startswith("|"):
+                table_start = cursor
+                break
+            cursor += 1
+
+        if table_start is None:
+            raise ValueError(f"README is missing a Markdown table under heading: {heading_line}")
+
+        table_end = table_start
+        while table_end < len(lines) and lines[table_end].lstrip().startswith("|"):
+            table_end += 1
+
+        new_lines = lines[:table_start] + rendered_table.splitlines() + lines[table_end:]
+        return "\n".join(new_lines)
+
+    raise ValueError(f"README is missing heading: {heading_line}")
 
 
 def validate_readme_quickstarts_section(products: list[object], readme_text: str, errors: list[str]) -> None:
@@ -485,9 +597,24 @@ def validate_readme_workflow_slices_table(workflow_slices: list[object], readme_
 
 
 def sync_readme(data: dict[str, object]) -> int:
+    owner = data.get("owner")
     active_products = data.get("active_products")
+    if not isinstance(owner, str):
+        print("portfolio.json is missing a valid owner", file=sys.stderr)
+        return 1
+
     if not isinstance(active_products, list):
         print("portfolio.json is missing a valid active_products list", file=sys.stderr)
+        return 1
+
+    workflow_slices = data.get("shipped_workflow_slices")
+    if not isinstance(workflow_slices, list):
+        print("portfolio.json is missing a valid shipped_workflow_slices list", file=sys.stderr)
+        return 1
+
+    supporting_repositories = data.get("supporting_repositories")
+    if not isinstance(supporting_repositories, list):
+        print("portfolio.json is missing a valid supporting_repositories list", file=sys.stderr)
         return 1
 
     next_build_targets = data.get("next_build_targets")
@@ -502,8 +629,23 @@ def sync_readme(data: dict[str, object]) -> int:
         return 1
 
     try:
-        updated_readme = replace_managed_section(
+        updated_readme = replace_markdown_table(
             readme_text,
+            "Active Product Surface",
+            render_active_products_table(owner, active_products),
+        )
+        updated_readme = replace_markdown_table(
+            updated_readme,
+            "Shipped Workflow Slices",
+            render_workflow_slices_table(workflow_slices),
+        )
+        updated_readme = replace_markdown_table(
+            updated_readme,
+            "Supporting Repositories",
+            render_supporting_repositories_table(owner, supporting_repositories),
+        )
+        updated_readme = replace_managed_section(
+            updated_readme,
             QUICKSTART_START_MARKER,
             QUICKSTART_END_MARKER,
             render_quickstarts_section(active_products),

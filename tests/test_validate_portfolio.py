@@ -231,6 +231,37 @@ demo-agent run sample.txt --out runs/demo-001
 <!-- portfolio-quickstarts:end -->""",
         )
 
+    def test_render_active_products_table_humanizes_status(self) -> None:
+        rendered = MODULE.render_active_products_table(self.data["owner"], self.data["active_products"])
+
+        self.assertEqual(
+            rendered,
+            """| Repository | Product value | Status |
+| --- | --- | --- |
+| [demo-agent](https://github.com/dyrc9/demo-agent) | TypeScript and Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems. | Working CLI product |""",
+        )
+
+    def test_replace_markdown_table_updates_named_heading(self) -> None:
+        readme_text = """## Active Product Surface
+
+intro text
+
+| Repository | Product value | Status |
+| --- | --- | --- |
+| old | old | old |
+
+## Next Section
+"""
+
+        updated = MODULE.replace_markdown_table(
+            readme_text,
+            "Active Product Surface",
+            MODULE.render_active_products_table(self.data["owner"], self.data["active_products"]),
+        )
+
+        self.assertIn("| [demo-agent](https://github.com/dyrc9/demo-agent) |", updated)
+        self.assertNotIn("| old | old | old |", updated)
+
     def test_render_next_build_targets_section_renders_bullets(self) -> None:
         rendered = MODULE.render_next_build_targets_section(self.data["next_build_targets"])
 
