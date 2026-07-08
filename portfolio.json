@@ -41,6 +41,12 @@
       "local_quickstart": [
         "agent-meeting-notes doctor",
         "agent-meeting-notes run path/to/meeting.mp3 --out runs/meeting-001 --transcriber openai --summarizer openai"
+      ],
+      "proof_commands": [
+        "agent-meeting-notes doctor --json",
+        "agent-meeting-notes probe meeting.mp3 --json",
+        "agent-meeting-notes estimate meeting.mp3 --chunk-seconds 600",
+        "agent-meeting-notes check examples/transcript.md"
       ]
     },
     {
@@ -59,6 +65,12 @@
       "local_quickstart": [
         "xhs-content-agent doctor",
         "xhs-content-agent draft examples/idea.md --out runs/first-note"
+      ],
+      "proof_commands": [
+        "xhs-content-agent doctor --json",
+        "xhs-content-agent draft examples/idea.md --generator template --out runs/template-note",
+        "xhs-content-agent inspect runs/template-note/note.json --json",
+        "xhs-content-agent check runs/template-note/note.json --json --strict"
       ],
       "safety_notes": [
         "no engagement manipulation",

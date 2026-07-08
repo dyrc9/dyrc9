@@ -26,6 +26,10 @@ class ValidatePortfolioReadmeTests(unittest.TestCase):
                         "demo-agent doctor",
                         "demo-agent run sample.txt --out runs/demo-001",
                     ],
+                    "proof_commands": [
+                        "demo-agent doctor --json",
+                        "demo-agent inspect runs/demo-001/result.json --json",
+                    ],
                 }
             ],
             "shipped_workflow_slices": [
@@ -79,6 +83,19 @@ demo-agent run sample.txt --out runs/demo-001
 | --- | --- | --- |
 | Raw idea to publish package | demo-agent draft, inspect, check | Turns a rough prompt into a reviewable package. |
 
+## Proof Commands
+
+<!-- portfolio-proof-commands:start -->
+
+Run these commands to show concrete operator-facing behavior, preflight checks, and quality gates:
+
+### `demo-agent`
+
+- `demo-agent doctor --json`
+- `demo-agent inspect runs/demo-001/result.json --json`
+
+<!-- portfolio-proof-commands:end -->
+
 ## Supporting Repositories
 
 | Repository | Why it matters |
@@ -130,6 +147,19 @@ demo-agent run sample.txt --out runs/demo-001
 | Workflow | Current surface | Why it matters |
 | --- | --- | --- |
 | Raw idea to publish package | demo-agent draft, inspect, check | Turns a rough prompt into a reviewable package. |
+
+## Proof Commands
+
+<!-- portfolio-proof-commands:start -->
+
+Run these commands to show concrete operator-facing behavior, preflight checks, and quality gates:
+
+### `demo-agent`
+
+- `demo-agent doctor --json`
+- `demo-agent inspect runs/demo-001/result.json --json`
+
+<!-- portfolio-proof-commands:end -->
 
 ## Supporting Repositories
 
@@ -186,6 +216,19 @@ demo-agent run sample.txt --out runs/demo-001
 | --- | --- | --- |
 | Raw idea to publish package | demo-agent run once | Turns a rough prompt into a reviewable package. |
 
+## Proof Commands
+
+<!-- portfolio-proof-commands:start -->
+
+Run these commands to show concrete operator-facing behavior, preflight checks, and quality gates:
+
+### `demo-agent`
+
+- `demo-agent doctor --json`
+- `demo-agent inspect runs/demo-001/result.json --json`
+
+<!-- portfolio-proof-commands:end -->
+
 ## Supporting Repositories
 
 | Repository | Why it matters |
@@ -229,6 +272,23 @@ demo-agent run sample.txt --out runs/demo-001
 ```
 
 <!-- portfolio-quickstarts:end -->""",
+        )
+
+    def test_render_proof_commands_section_renders_manifest_commands(self) -> None:
+        rendered = MODULE.render_proof_commands_section(self.data["active_products"])
+
+        self.assertEqual(
+            rendered,
+            """<!-- portfolio-proof-commands:start -->
+
+Run these commands to show concrete operator-facing behavior, preflight checks, and quality gates:
+
+### `demo-agent`
+
+- `demo-agent doctor --json`
+- `demo-agent inspect runs/demo-001/result.json --json`
+
+<!-- portfolio-proof-commands:end -->""",
         )
 
     def test_render_active_products_table_humanizes_status(self) -> None:
@@ -305,6 +365,18 @@ demo-agent run once
 | --- | --- | --- |
 | Raw idea to publish package | demo-agent draft, inspect, check | Turns a rough prompt into a reviewable package. |
 
+## Proof Commands
+
+<!-- portfolio-proof-commands:start -->
+
+Run these commands to show concrete operator-facing behavior, preflight checks, and quality gates:
+
+### `demo-agent`
+
+- `demo-agent run once`
+
+<!-- portfolio-proof-commands:end -->
+
 ## Supporting Repositories
 
 | Repository | Why it matters |
@@ -326,6 +398,73 @@ demo-agent run once
 
         self.assertIn(
             "README managed 'Local Quickstarts' section must be regenerated from portfolio.json",
+            errors,
+        )
+
+    def test_validate_readme_rejects_drifted_proof_commands_section(self) -> None:
+        readme_text = """
+## Active Product Surface
+
+| Repository | Product value | Status |
+| --- | --- | --- |
+| [demo-agent](https://github.com/dyrc9/demo-agent) | TypeScript + Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems. | Working CLI product |
+
+## Local Quickstarts
+
+<!-- portfolio-quickstarts:start -->
+
+Use these local commands to demonstrate the operator-facing surfaces of the workflow CLIs:
+
+### `demo-agent`
+
+TypeScript and Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems.
+
+```bash
+demo-agent doctor
+demo-agent run sample.txt --out runs/demo-001
+```
+
+<!-- portfolio-quickstarts:end -->
+
+## Shipped Workflow Slices
+
+| Workflow | Current surface | Why it matters |
+| --- | --- | --- |
+| Raw idea to publish package | demo-agent draft, inspect, check | Turns a rough prompt into a reviewable package. |
+
+## Proof Commands
+
+<!-- portfolio-proof-commands:start -->
+
+Run these commands to show concrete operator-facing behavior, preflight checks, and quality gates:
+
+### `demo-agent`
+
+- `demo-agent run once`
+
+<!-- portfolio-proof-commands:end -->
+
+## Supporting Repositories
+
+| Repository | Why it matters |
+| --- | --- |
+| [systems-lab](https://github.com/dyrc9/systems-lab) | Linux kernel lab work and low-level systems exposure. |
+
+## Next Build Targets
+
+<!-- portfolio-next-targets:start -->
+
+- compact harness lab with pass fail checks
+- stronger trace review surfaces
+
+<!-- portfolio-next-targets:end -->
+"""
+        errors: list[str] = []
+
+        MODULE.validate_readme(readme_text, self.data, errors)
+
+        self.assertIn(
+            "README managed 'Proof Commands' section must be regenerated from portfolio.json",
             errors,
         )
 
@@ -359,6 +498,19 @@ demo-agent run sample.txt --out runs/demo-001
 | Workflow | Current surface | Why it matters |
 | --- | --- | --- |
 | Raw idea to publish package | demo-agent draft, inspect, check | Turns a rough prompt into a reviewable package. |
+
+## Proof Commands
+
+<!-- portfolio-proof-commands:start -->
+
+Run these commands to show concrete operator-facing behavior, preflight checks, and quality gates:
+
+### `demo-agent`
+
+- `demo-agent doctor --json`
+- `demo-agent inspect runs/demo-001/result.json --json`
+
+<!-- portfolio-proof-commands:end -->
 
 ## Supporting Repositories
 

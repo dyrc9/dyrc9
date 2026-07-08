@@ -15,6 +15,8 @@ README_PATH = ROOT / "README.md"
 ALLOWED_ACTIVE_CATEGORIES = {"runtime", "workflow-cli", "public-surface"}
 QUICKSTART_START_MARKER = "<!-- portfolio-quickstarts:start -->"
 QUICKSTART_END_MARKER = "<!-- portfolio-quickstarts:end -->"
+PROOF_COMMANDS_START_MARKER = "<!-- portfolio-proof-commands:start -->"
+PROOF_COMMANDS_END_MARKER = "<!-- portfolio-proof-commands:end -->"
 NEXT_TARGETS_START_MARKER = "<!-- portfolio-next-targets:start -->"
 NEXT_TARGETS_END_MARKER = "<!-- portfolio-next-targets:end -->"
 
@@ -249,6 +251,42 @@ def render_quickstarts_section(products: list[object]) -> str:
     return "\n".join(lines)
 
 
+def render_proof_commands_section(products: list[object]) -> str:
+    lines = [
+        PROOF_COMMANDS_START_MARKER,
+        "",
+        "Run these commands to show concrete operator-facing behavior, preflight checks, and quality gates:",
+        "",
+    ]
+
+    rendered_any = False
+    for product in products:
+        if not isinstance(product, dict):
+            continue
+
+        proof_commands = product.get("proof_commands")
+        if not is_string_list(proof_commands):
+            continue
+
+        repo = product.get("repo")
+        if not isinstance(repo, str):
+            continue
+
+        rendered_any = True
+        lines.append(f"### `{repo}`")
+        lines.append("")
+        for command in proof_commands:
+            lines.append(f"- `{command}`")
+        lines.append("")
+
+    if not rendered_any:
+        lines.append("_No proof commands are currently defined in the manifest._")
+        lines.append("")
+
+    lines.append(PROOF_COMMANDS_END_MARKER)
+    return "\n".join(lines)
+
+
 def render_next_build_targets_section(targets: list[object]) -> str:
     lines = [
         NEXT_TARGETS_START_MARKER,
@@ -327,6 +365,25 @@ def validate_readme_quickstarts_section(products: list[object], readme_text: str
     )
 
 
+def validate_readme_proof_commands_section(products: list[object], readme_text: str, errors: list[str]) -> None:
+    rendered_section = render_proof_commands_section(products)
+    pattern = re.compile(
+        rf"{re.escape(PROOF_COMMANDS_START_MARKER)}.*?{re.escape(PROOF_COMMANDS_END_MARKER)}",
+        re.DOTALL,
+    )
+    match = pattern.search(readme_text)
+    ensure(match is not None, "README is missing the managed 'Proof Commands' section markers", errors)
+    if match is None:
+        return
+
+    current_section = match.group(0)
+    ensure(
+        current_section == rendered_section,
+        "README managed 'Proof Commands' section must be regenerated from portfolio.json",
+        errors,
+    )
+
+
 def validate_readme_next_build_targets_section(targets: list[object], readme_text: str, errors: list[str]) -> None:
     rendered_section = render_next_build_targets_section(targets)
     pattern = re.compile(
@@ -380,6 +437,9 @@ def validate_active_products(owner: str, products: object, errors: list[str]) ->
 
         if "local_quickstart" in product and product.get("local_quickstart") is not None:
             ensure(is_string_list(product.get("local_quickstart")), f"{prefix}.local_quickstart must be a non-empty list of strings", errors)
+
+        if "proof_commands" in product and product.get("proof_commands") is not None:
+            ensure(is_string_list(product.get("proof_commands")), f"{prefix}.proof_commands must be a non-empty list of strings", errors)
 
         if "safety_notes" in product and product.get("safety_notes") is not None:
             ensure(is_string_list(product.get("safety_notes")), f"{prefix}.safety_notes must be a non-empty list of strings", errors)
@@ -438,6 +498,7 @@ def validate_readme(readme_text: str, data: dict[str, object], errors: list[str]
     if isinstance(data.get("owner"), str) and isinstance(active_products, list):
         validate_readme_active_products_table(data["owner"], active_products, readme_text, errors)
         validate_readme_quickstarts_section(active_products, readme_text, errors)
+        validate_readme_proof_commands_section(active_products, readme_text, errors)
 
     workflow_slices = data.get("shipped_workflow_slices")
     if isinstance(workflow_slices, list):
@@ -649,6 +710,12 @@ def sync_readme(data: dict[str, object]) -> int:
             QUICKSTART_START_MARKER,
             QUICKSTART_END_MARKER,
             render_quickstarts_section(active_products),
+        )
+        updated_readme = replace_managed_section(
+            updated_readme,
+            PROOF_COMMANDS_START_MARKER,
+            PROOF_COMMANDS_END_MARKER,
+            render_proof_commands_section(active_products),
         )
         updated_readme = replace_managed_section(
             updated_readme,

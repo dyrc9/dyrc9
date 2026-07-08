@@ -91,6 +91,28 @@ python -m unittest tests.test_validate_portfolio
 
 The structure contract lives in [`portfolio.schema.json`](./portfolio.schema.json), while the validator enforces a few repository-specific rules such as owner/repo URL consistency and `local_quickstart` coverage for workflow CLIs.
 
+## Proof Commands
+
+<!-- portfolio-proof-commands:start -->
+
+Run these commands to show concrete operator-facing behavior, preflight checks, and quality gates:
+
+### `agent-meeting-notes`
+
+- `agent-meeting-notes doctor --json`
+- `agent-meeting-notes probe meeting.mp3 --json`
+- `agent-meeting-notes estimate meeting.mp3 --chunk-seconds 600`
+- `agent-meeting-notes check examples/transcript.md`
+
+### `xhs-content-agent`
+
+- `xhs-content-agent doctor --json`
+- `xhs-content-agent draft examples/idea.md --generator template --out runs/template-note`
+- `xhs-content-agent inspect runs/template-note/note.json --json`
+- `xhs-content-agent check runs/template-note/note.json --json --strict`
+
+<!-- portfolio-proof-commands:end -->
+
 ## Supporting Repositories
 
 These are relevant because they reinforce the engineering foundation behind the product work:

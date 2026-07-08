@@ -130,6 +130,9 @@
         "local_quickstart": {
           "$ref": "#/$defs/stringList"
         },
+        "proof_commands": {
+          "$ref": "#/$defs/stringList"
+        },
         "safety_notes": {
           "$ref": "#/$defs/stringList"
         }
