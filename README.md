@@ -126,6 +126,26 @@ These are relevant because they reinforce the engineering foundation behind the 
 
 Older forks and course repositories are being cleaned up so the profile stays product-focused.
 
+## Artifact Examples
+
+<!-- portfolio-artifact-examples:start -->
+
+These are the concrete files or outputs an operator should expect from the workflow products:
+
+### `agent-meeting-notes`
+
+- transcript.md with timestamps and speaker-attributed segments
+- summary.md with decisions, action items, and risks
+- notes.json with structured metadata for downstream review
+
+### `xhs-content-agent`
+
+- note.json draft package with title, body, hashtags, and metadata
+- calendar.csv or markdown planning output for reviewable scheduling
+- diagnostic JSON from inspect and check commands for operator signoff
+
+<!-- portfolio-artifact-examples:end -->
+
 ## Stack I Am Using More
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)

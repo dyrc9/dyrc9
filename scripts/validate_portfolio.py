@@ -17,6 +17,8 @@ QUICKSTART_START_MARKER = "<!-- portfolio-quickstarts:start -->"
 QUICKSTART_END_MARKER = "<!-- portfolio-quickstarts:end -->"
 PROOF_COMMANDS_START_MARKER = "<!-- portfolio-proof-commands:start -->"
 PROOF_COMMANDS_END_MARKER = "<!-- portfolio-proof-commands:end -->"
+ARTIFACT_EXAMPLES_START_MARKER = "<!-- portfolio-artifact-examples:start -->"
+ARTIFACT_EXAMPLES_END_MARKER = "<!-- portfolio-artifact-examples:end -->"
 NEXT_TARGETS_START_MARKER = "<!-- portfolio-next-targets:start -->"
 NEXT_TARGETS_END_MARKER = "<!-- portfolio-next-targets:end -->"
 
@@ -287,6 +289,42 @@ def render_proof_commands_section(products: list[object]) -> str:
     return "\n".join(lines)
 
 
+def render_artifact_examples_section(products: list[object]) -> str:
+    lines = [
+        ARTIFACT_EXAMPLES_START_MARKER,
+        "",
+        "These are the concrete files or outputs an operator should expect from the workflow products:",
+        "",
+    ]
+
+    rendered_any = False
+    for product in products:
+        if not isinstance(product, dict):
+            continue
+
+        artifact_examples = product.get("artifact_examples")
+        if not is_string_list(artifact_examples):
+            continue
+
+        repo = product.get("repo")
+        if not isinstance(repo, str):
+            continue
+
+        rendered_any = True
+        lines.append(f"### `{repo}`")
+        lines.append("")
+        for artifact in artifact_examples:
+            lines.append(f"- {artifact}")
+        lines.append("")
+
+    if not rendered_any:
+        lines.append("_No artifact examples are currently defined in the manifest._")
+        lines.append("")
+
+    lines.append(ARTIFACT_EXAMPLES_END_MARKER)
+    return "\n".join(lines)
+
+
 def render_next_build_targets_section(targets: list[object]) -> str:
     lines = [
         NEXT_TARGETS_START_MARKER,
@@ -384,6 +422,25 @@ def validate_readme_proof_commands_section(products: list[object], readme_text: 
     )
 
 
+def validate_readme_artifact_examples_section(products: list[object], readme_text: str, errors: list[str]) -> None:
+    rendered_section = render_artifact_examples_section(products)
+    pattern = re.compile(
+        rf"{re.escape(ARTIFACT_EXAMPLES_START_MARKER)}.*?{re.escape(ARTIFACT_EXAMPLES_END_MARKER)}",
+        re.DOTALL,
+    )
+    match = pattern.search(readme_text)
+    ensure(match is not None, "README is missing the managed 'Artifact Examples' section markers", errors)
+    if match is None:
+        return
+
+    current_section = match.group(0)
+    ensure(
+        current_section == rendered_section,
+        "README managed 'Artifact Examples' section must be regenerated from portfolio.json",
+        errors,
+    )
+
+
 def validate_readme_next_build_targets_section(targets: list[object], readme_text: str, errors: list[str]) -> None:
     rendered_section = render_next_build_targets_section(targets)
     pattern = re.compile(
@@ -440,6 +497,9 @@ def validate_active_products(owner: str, products: object, errors: list[str]) ->
 
         if "proof_commands" in product and product.get("proof_commands") is not None:
             ensure(is_string_list(product.get("proof_commands")), f"{prefix}.proof_commands must be a non-empty list of strings", errors)
+
+        if "artifact_examples" in product and product.get("artifact_examples") is not None:
+            ensure(is_string_list(product.get("artifact_examples")), f"{prefix}.artifact_examples must be a non-empty list of strings", errors)
 
         if "safety_notes" in product and product.get("safety_notes") is not None:
             ensure(is_string_list(product.get("safety_notes")), f"{prefix}.safety_notes must be a non-empty list of strings", errors)
@@ -499,6 +559,7 @@ def validate_readme(readme_text: str, data: dict[str, object], errors: list[str]
         validate_readme_active_products_table(data["owner"], active_products, readme_text, errors)
         validate_readme_quickstarts_section(active_products, readme_text, errors)
         validate_readme_proof_commands_section(active_products, readme_text, errors)
+        validate_readme_artifact_examples_section(active_products, readme_text, errors)
 
     workflow_slices = data.get("shipped_workflow_slices")
     if isinstance(workflow_slices, list):
@@ -716,6 +777,12 @@ def sync_readme(data: dict[str, object]) -> int:
             PROOF_COMMANDS_START_MARKER,
             PROOF_COMMANDS_END_MARKER,
             render_proof_commands_section(active_products),
+        )
+        updated_readme = replace_managed_section(
+            updated_readme,
+            ARTIFACT_EXAMPLES_START_MARKER,
+            ARTIFACT_EXAMPLES_END_MARKER,
+            render_artifact_examples_section(active_products),
         )
         updated_readme = replace_managed_section(
             updated_readme,

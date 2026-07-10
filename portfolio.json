@@ -47,6 +47,11 @@
         "agent-meeting-notes probe meeting.mp3 --json",
         "agent-meeting-notes estimate meeting.mp3 --chunk-seconds 600",
         "agent-meeting-notes check examples/transcript.md"
+      ],
+      "artifact_examples": [
+        "transcript.md with timestamps and speaker-attributed segments",
+        "summary.md with decisions, action items, and risks",
+        "notes.json with structured metadata for downstream review"
       ]
     },
     {
@@ -71,6 +76,11 @@
         "xhs-content-agent draft examples/idea.md --generator template --out runs/template-note",
         "xhs-content-agent inspect runs/template-note/note.json --json",
         "xhs-content-agent check runs/template-note/note.json --json --strict"
+      ],
+      "artifact_examples": [
+        "note.json draft package with title, body, hashtags, and metadata",
+        "calendar.csv or markdown planning output for reviewable scheduling",
+        "diagnostic JSON from inspect and check commands for operator signoff"
       ],
       "safety_notes": [
         "no engagement manipulation",

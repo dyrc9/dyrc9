@@ -30,6 +30,10 @@ class ValidatePortfolioReadmeTests(unittest.TestCase):
                         "demo-agent doctor --json",
                         "demo-agent inspect runs/demo-001/result.json --json",
                     ],
+                    "artifact_examples": [
+                        "result.json with structured output and trace metadata",
+                        "summary.md with operator-facing findings",
+                    ],
                 }
             ],
             "shipped_workflow_slices": [
@@ -102,6 +106,19 @@ Run these commands to show concrete operator-facing behavior, preflight checks, 
 | --- | --- |
 | [systems-lab](https://github.com/dyrc9/systems-lab) | Linux kernel lab work and low-level systems exposure. |
 
+## Artifact Examples
+
+<!-- portfolio-artifact-examples:start -->
+
+These are the concrete files or outputs an operator should expect from the workflow products:
+
+### `demo-agent`
+
+- result.json with structured output and trace metadata
+- summary.md with operator-facing findings
+
+<!-- portfolio-artifact-examples:end -->
+
 ## Next Build Targets
 
 <!-- portfolio-next-targets:start -->
@@ -166,6 +183,19 @@ Run these commands to show concrete operator-facing behavior, preflight checks, 
 | Repository | Why it matters |
 | --- | --- |
 | [systems-lab](https://github.com/dyrc9/systems-lab) | Linux kernel lab work and low-level systems exposure. |
+
+## Artifact Examples
+
+<!-- portfolio-artifact-examples:start -->
+
+These are the concrete files or outputs an operator should expect from the workflow products:
+
+### `demo-agent`
+
+- result.json with structured output and trace metadata
+- summary.md with operator-facing findings
+
+<!-- portfolio-artifact-examples:end -->
 
 ## Next Build Targets
 
@@ -235,6 +265,19 @@ Run these commands to show concrete operator-facing behavior, preflight checks, 
 | --- | --- |
 | [systems-lab](https://github.com/dyrc9/systems-lab) | Linux kernel lab work and low-level systems exposure. |
 
+## Artifact Examples
+
+<!-- portfolio-artifact-examples:start -->
+
+These are the concrete files or outputs an operator should expect from the workflow products:
+
+### `demo-agent`
+
+- result.json with structured output and trace metadata
+- summary.md with operator-facing findings
+
+<!-- portfolio-artifact-examples:end -->
+
 ## Next Build Targets
 
 <!-- portfolio-next-targets:start -->
@@ -289,6 +332,23 @@ Run these commands to show concrete operator-facing behavior, preflight checks, 
 - `demo-agent inspect runs/demo-001/result.json --json`
 
 <!-- portfolio-proof-commands:end -->""",
+        )
+
+    def test_render_artifact_examples_section_renders_manifest_outputs(self) -> None:
+        rendered = MODULE.render_artifact_examples_section(self.data["active_products"])
+
+        self.assertEqual(
+            rendered,
+            """<!-- portfolio-artifact-examples:start -->
+
+These are the concrete files or outputs an operator should expect from the workflow products:
+
+### `demo-agent`
+
+- result.json with structured output and trace metadata
+- summary.md with operator-facing findings
+
+<!-- portfolio-artifact-examples:end -->""",
         )
 
     def test_render_active_products_table_humanizes_status(self) -> None:
@@ -383,6 +443,19 @@ Run these commands to show concrete operator-facing behavior, preflight checks, 
 | --- | --- |
 | [systems-lab](https://github.com/dyrc9/systems-lab) | Linux kernel lab work and low-level systems exposure. |
 
+## Artifact Examples
+
+<!-- portfolio-artifact-examples:start -->
+
+These are the concrete files or outputs an operator should expect from the workflow products:
+
+### `demo-agent`
+
+- result.json with structured output and trace metadata
+- summary.md with operator-facing findings
+
+<!-- portfolio-artifact-examples:end -->
+
 ## Next Build Targets
 
 <!-- portfolio-next-targets:start -->
@@ -468,6 +541,86 @@ Run these commands to show concrete operator-facing behavior, preflight checks, 
             errors,
         )
 
+    def test_validate_readme_rejects_drifted_artifact_examples_section(self) -> None:
+        readme_text = """
+## Active Product Surface
+
+| Repository | Product value | Status |
+| --- | --- | --- |
+| [demo-agent](https://github.com/dyrc9/demo-agent) | TypeScript + Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems. | Working CLI product |
+
+## Local Quickstarts
+
+<!-- portfolio-quickstarts:start -->
+
+Use these local commands to demonstrate the operator-facing surfaces of the workflow CLIs:
+
+### `demo-agent`
+
+TypeScript and Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems.
+
+```bash
+demo-agent doctor
+demo-agent run sample.txt --out runs/demo-001
+```
+
+<!-- portfolio-quickstarts:end -->
+
+## Shipped Workflow Slices
+
+| Workflow | Current surface | Why it matters |
+| --- | --- | --- |
+| Raw idea to publish package | demo-agent draft, inspect, check | Turns a rough prompt into a reviewable package. |
+
+## Proof Commands
+
+<!-- portfolio-proof-commands:start -->
+
+Run these commands to show concrete operator-facing behavior, preflight checks, and quality gates:
+
+### `demo-agent`
+
+- `demo-agent doctor --json`
+- `demo-agent inspect runs/demo-001/result.json --json`
+
+<!-- portfolio-proof-commands:end -->
+
+## Supporting Repositories
+
+| Repository | Why it matters |
+| --- | --- |
+| [systems-lab](https://github.com/dyrc9/systems-lab) | Linux kernel lab work and low-level systems exposure. |
+
+## Artifact Examples
+
+<!-- portfolio-artifact-examples:start -->
+
+These are the concrete files or outputs an operator should expect from the workflow products:
+
+### `demo-agent`
+
+- screenshot.png only
+
+<!-- portfolio-artifact-examples:end -->
+
+## Next Build Targets
+
+<!-- portfolio-next-targets:start -->
+
+- compact harness lab with pass fail checks
+- stronger trace review surfaces
+
+<!-- portfolio-next-targets:end -->
+"""
+        errors: list[str] = []
+
+        MODULE.validate_readme(readme_text, self.data, errors)
+
+        self.assertIn(
+            "README managed 'Artifact Examples' section must be regenerated from portfolio.json",
+            errors,
+        )
+
     def test_validate_readme_rejects_drifted_next_build_targets_section(self) -> None:
         readme_text = """
 ## Active Product Surface
@@ -517,6 +670,19 @@ Run these commands to show concrete operator-facing behavior, preflight checks, 
 | Repository | Why it matters |
 | --- | --- |
 | [systems-lab](https://github.com/dyrc9/systems-lab) | Linux kernel lab work and low-level systems exposure. |
+
+## Artifact Examples
+
+<!-- portfolio-artifact-examples:start -->
+
+These are the concrete files or outputs an operator should expect from the workflow products:
+
+### `demo-agent`
+
+- result.json with structured output and trace metadata
+- summary.md with operator-facing findings
+
+<!-- portfolio-artifact-examples:end -->
 
 ## Next Build Targets
 
