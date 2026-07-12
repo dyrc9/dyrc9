@@ -34,6 +34,10 @@ class ValidatePortfolioReadmeTests(unittest.TestCase):
                         "result.json with structured output and trace metadata",
                         "summary.md with operator-facing findings",
                     ],
+                    "safety_notes": [
+                        "manual review before publish",
+                        "no policy-evasion automation",
+                    ],
                 }
             ],
             "shipped_workflow_slices": [
@@ -119,6 +123,19 @@ These are the concrete files or outputs an operator should expect from the workf
 
 <!-- portfolio-artifact-examples:end -->
 
+## Safety Guardrails
+
+<!-- portfolio-safety-notes:start -->
+
+These are the explicit guardrails attached to workflow products that could otherwise invite unsafe automation:
+
+### `demo-agent`
+
+- manual review before publish
+- no policy-evasion automation
+
+<!-- portfolio-safety-notes:end -->
+
 ## Next Build Targets
 
 <!-- portfolio-next-targets:start -->
@@ -196,6 +213,19 @@ These are the concrete files or outputs an operator should expect from the workf
 - summary.md with operator-facing findings
 
 <!-- portfolio-artifact-examples:end -->
+
+## Safety Guardrails
+
+<!-- portfolio-safety-notes:start -->
+
+These are the explicit guardrails attached to workflow products that could otherwise invite unsafe automation:
+
+### `demo-agent`
+
+- manual review before publish
+- no policy-evasion automation
+
+<!-- portfolio-safety-notes:end -->
 
 ## Next Build Targets
 
@@ -278,6 +308,19 @@ These are the concrete files or outputs an operator should expect from the workf
 
 <!-- portfolio-artifact-examples:end -->
 
+## Safety Guardrails
+
+<!-- portfolio-safety-notes:start -->
+
+These are the explicit guardrails attached to workflow products that could otherwise invite unsafe automation:
+
+### `demo-agent`
+
+- manual review before publish
+- no policy-evasion automation
+
+<!-- portfolio-safety-notes:end -->
+
 ## Next Build Targets
 
 <!-- portfolio-next-targets:start -->
@@ -349,6 +392,23 @@ These are the concrete files or outputs an operator should expect from the workf
 - summary.md with operator-facing findings
 
 <!-- portfolio-artifact-examples:end -->""",
+        )
+
+    def test_render_safety_notes_section_renders_manifest_guardrails(self) -> None:
+        rendered = MODULE.render_safety_notes_section(self.data["active_products"])
+
+        self.assertEqual(
+            rendered,
+            """<!-- portfolio-safety-notes:start -->
+
+These are the explicit guardrails attached to workflow products that could otherwise invite unsafe automation:
+
+### `demo-agent`
+
+- manual review before publish
+- no policy-evasion automation
+
+<!-- portfolio-safety-notes:end -->""",
         )
 
     def test_render_active_products_table_humanizes_status(self) -> None:
@@ -455,6 +515,18 @@ These are the concrete files or outputs an operator should expect from the workf
 - summary.md with operator-facing findings
 
 <!-- portfolio-artifact-examples:end -->
+
+## Safety Guardrails
+
+<!-- portfolio-safety-notes:start -->
+
+These are the explicit guardrails attached to workflow products that could otherwise invite unsafe automation:
+
+### `demo-agent`
+
+- manual review before publish
+
+<!-- portfolio-safety-notes:end -->
 
 ## Next Build Targets
 
@@ -621,6 +693,99 @@ These are the concrete files or outputs an operator should expect from the workf
             errors,
         )
 
+    def test_validate_readme_rejects_drifted_safety_notes_section(self) -> None:
+        readme_text = """
+## Active Product Surface
+
+| Repository | Product value | Status |
+| --- | --- | --- |
+| [demo-agent](https://github.com/dyrc9/demo-agent) | TypeScript + Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems. | Working CLI product |
+
+## Local Quickstarts
+
+<!-- portfolio-quickstarts:start -->
+
+Use these local commands to demonstrate the operator-facing surfaces of the workflow CLIs:
+
+### `demo-agent`
+
+TypeScript and Rust runtime for embedding providers, skills, MCP, and fast local tools into existing systems.
+
+```bash
+demo-agent doctor
+demo-agent run sample.txt --out runs/demo-001
+```
+
+<!-- portfolio-quickstarts:end -->
+
+## Shipped Workflow Slices
+
+| Workflow | Current surface | Why it matters |
+| --- | --- | --- |
+| Raw idea to publish package | demo-agent draft, inspect, check | Turns a rough prompt into a reviewable package. |
+
+## Proof Commands
+
+<!-- portfolio-proof-commands:start -->
+
+Run these commands to show concrete operator-facing behavior, preflight checks, and quality gates:
+
+### `demo-agent`
+
+- `demo-agent doctor --json`
+- `demo-agent inspect runs/demo-001/result.json --json`
+
+<!-- portfolio-proof-commands:end -->
+
+## Supporting Repositories
+
+| Repository | Why it matters |
+| --- | --- |
+| [systems-lab](https://github.com/dyrc9/systems-lab) | Linux kernel lab work and low-level systems exposure. |
+
+## Artifact Examples
+
+<!-- portfolio-artifact-examples:start -->
+
+These are the concrete files or outputs an operator should expect from the workflow products:
+
+### `demo-agent`
+
+- result.json with structured output and trace metadata
+- summary.md with operator-facing findings
+
+<!-- portfolio-artifact-examples:end -->
+
+## Safety Guardrails
+
+<!-- portfolio-safety-notes:start -->
+
+These are the explicit guardrails attached to workflow products that could otherwise invite unsafe automation:
+
+### `demo-agent`
+
+- manual review before publish
+
+<!-- portfolio-safety-notes:end -->
+
+## Next Build Targets
+
+<!-- portfolio-next-targets:start -->
+
+- compact harness lab with pass fail checks
+- stronger trace review surfaces
+
+<!-- portfolio-next-targets:end -->
+"""
+        errors: list[str] = []
+
+        MODULE.validate_readme(readme_text, self.data, errors)
+
+        self.assertIn(
+            "README managed 'Safety Guardrails' section must be regenerated from portfolio.json",
+            errors,
+        )
+
     def test_validate_readme_rejects_drifted_next_build_targets_section(self) -> None:
         readme_text = """
 ## Active Product Surface
@@ -683,6 +848,19 @@ These are the concrete files or outputs an operator should expect from the workf
 - summary.md with operator-facing findings
 
 <!-- portfolio-artifact-examples:end -->
+
+## Safety Guardrails
+
+<!-- portfolio-safety-notes:start -->
+
+These are the explicit guardrails attached to workflow products that could otherwise invite unsafe automation:
+
+### `demo-agent`
+
+- manual review before publish
+- no policy-evasion automation
+
+<!-- portfolio-safety-notes:end -->
 
 ## Next Build Targets
 

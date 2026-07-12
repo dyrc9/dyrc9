@@ -146,6 +146,20 @@ These are the concrete files or outputs an operator should expect from the workf
 
 <!-- portfolio-artifact-examples:end -->
 
+## Safety Guardrails
+
+<!-- portfolio-safety-notes:start -->
+
+These are the explicit guardrails attached to workflow products that could otherwise invite unsafe automation:
+
+### `xhs-content-agent`
+
+- no engagement manipulation
+- no policy-evasion automation
+- manual review before publishing
+
+<!-- portfolio-safety-notes:end -->
+
 ## Stack I Am Using More
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
