@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 
@@ -632,6 +633,59 @@ def validate_readme(readme_text: str, data: dict[str, object], errors: list[str]
         validate_readme_next_build_targets_section(next_build_targets, readme_text, errors)
 
 
+def build_report(data: dict[str, object], errors: list[str]) -> dict[str, object]:
+    active_products = data.get("active_products")
+    supporting_repositories = data.get("supporting_repositories")
+    workflow_slices = data.get("shipped_workflow_slices")
+    next_build_targets = data.get("next_build_targets")
+
+    products = active_products if isinstance(active_products, list) else []
+    category_counts = Counter()
+    workflow_cli_repos: list[str] = []
+    proof_command_repos: list[str] = []
+    artifact_example_repos: list[str] = []
+    safety_note_repos: list[str] = []
+
+    for product in products:
+        if not isinstance(product, dict):
+            continue
+
+        repo = product.get("repo")
+        category = product.get("category")
+        if isinstance(category, str):
+            category_counts[category] += 1
+
+        if not isinstance(repo, str):
+            continue
+
+        if category == "workflow-cli":
+            workflow_cli_repos.append(repo)
+        if is_string_list(product.get("proof_commands")):
+            proof_command_repos.append(repo)
+        if is_string_list(product.get("artifact_examples")):
+            artifact_example_repos.append(repo)
+        if is_string_list(product.get("safety_notes")):
+            safety_note_repos.append(repo)
+
+    return {
+        "ok": not errors,
+        "owner": data.get("owner"),
+        "counts": {
+            "active_products": len(products),
+            "workflow_slices": len(workflow_slices) if isinstance(workflow_slices, list) else 0,
+            "supporting_repositories": len(supporting_repositories) if isinstance(supporting_repositories, list) else 0,
+            "next_build_targets": len(next_build_targets) if isinstance(next_build_targets, list) else 0,
+        },
+        "active_product_categories": dict(sorted(category_counts.items())),
+        "workflow_cli_repos": workflow_cli_repos,
+        "repos_with_proof_commands": proof_command_repos,
+        "repos_with_artifact_examples": artifact_example_repos,
+        "repos_with_safety_notes": safety_note_repos,
+        "readme_in_sync": not any(error.startswith("README ") for error in errors),
+        "errors": errors,
+    }
+
+
 def validate_readme_active_products_table(owner: str, products: list[object], readme_text: str, errors: list[str]) -> None:
     parsed = extract_markdown_table(readme_text, "Active Product Surface")
     ensure(parsed is not None, "README is missing the 'Active Product Surface' table", errors)
@@ -869,6 +923,12 @@ def sync_readme(data: dict[str, object]) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     argv = argv or sys.argv[1:]
+    json_output = False
+
+    if "--json" in argv:
+        json_output = True
+        argv = [argument for argument in argv if argument != "--json"]
+
     errors: list[str] = []
 
     try:
@@ -897,8 +957,12 @@ def main(argv: list[str] | None = None) -> int:
 
     ensure(isinstance(data, dict), "portfolio.json must contain a top-level object", errors)
     if not isinstance(data, dict):
-        for error in errors:
-            print(f"ERROR: {error}", file=sys.stderr)
+        report = {"ok": False, "errors": errors}
+        if json_output:
+            print(json.dumps(report, indent=2))
+        else:
+            for error in errors:
+                print(f"ERROR: {error}", file=sys.stderr)
         return 1
 
     if argv == ["--sync-readme"]:
@@ -912,18 +976,26 @@ def main(argv: list[str] | None = None) -> int:
         validate_supporting_repositories(owner, data.get("supporting_repositories"), errors)
         validate_readme(readme_text, data, errors)
 
+    report = build_report(data, errors)
+
     if errors:
-        for error in errors:
-            print(f"ERROR: {error}", file=sys.stderr)
+        if json_output:
+            print(json.dumps(report, indent=2))
+        else:
+            for error in errors:
+                print(f"ERROR: {error}", file=sys.stderr)
         return 1
 
-    print(
-        "portfolio manifest OK: "
-        f"{len(data['active_products'])} active products, "
-        f"{len(data['shipped_workflow_slices'])} workflow slices, "
-        f"{len(data['supporting_repositories'])} supporting repositories, "
-        f"{len(data['next_build_targets'])} next targets"
-    )
+    if json_output:
+        print(json.dumps(report, indent=2))
+    else:
+        print(
+            "portfolio manifest OK: "
+            f"{len(data['active_products'])} active products, "
+            f"{len(data['shipped_workflow_slices'])} workflow slices, "
+            f"{len(data['supporting_repositories'])} supporting repositories, "
+            f"{len(data['next_build_targets'])} next targets"
+        )
     return 0
 
 

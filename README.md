@@ -85,11 +85,14 @@ The manifest and the README product tables are now checked by a local validator 
 
 ```bash
 python scripts/validate_portfolio.py
+python scripts/validate_portfolio.py --json
 python scripts/validate_portfolio.py --sync-readme
 python -m unittest tests.test_validate_portfolio
 ```
 
 The structure contract lives in [`portfolio.schema.json`](./portfolio.schema.json), while the validator enforces a few repository-specific rules such as owner/repo URL consistency and `local_quickstart` coverage for workflow CLIs.
+
+The `--json` mode turns that validator into a small machine-readable health report. That makes it usable from local automations and future portfolio checks without scraping human-oriented console text.
 
 ## Proof Commands
 

@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import contextlib
+import io
 import importlib.util
+import json
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
@@ -877,6 +881,210 @@ These are the explicit guardrails attached to workflow products that could other
         self.assertIn(
             "README managed 'Next Build Targets' section must be regenerated from portfolio.json",
             errors,
+        )
+
+
+class ValidatePortfolioJsonReportTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.data = {
+            "version": 1,
+            "owner": "dyrc9",
+            "positioning": {
+                "headline": "AI Agent / Harness Engineering",
+                "summary": "Practical agent tooling.",
+            },
+            "workflow_pattern": [
+                "source input",
+                "inspectable artifact",
+                "quality gate",
+            ],
+            "active_products": [
+                {
+                    "repo": "demo-runtime",
+                    "url": "https://github.com/dyrc9/demo-runtime",
+                    "category": "runtime",
+                    "status": "core-runtime-bet",
+                    "value": "Reusable runtime layer for providers, tools, and traces.",
+                    "surface": ["providers", "tool orchestration"],
+                },
+                {
+                    "repo": "demo-cli",
+                    "url": "https://github.com/dyrc9/demo-cli",
+                    "category": "workflow-cli",
+                    "status": "working-cli-product",
+                    "value": "Workflow CLI with inspectable outputs and quality gates.",
+                    "surface": ["run", "inspect", "check"],
+                    "local_quickstart": [
+                        "demo-cli doctor",
+                        "demo-cli run sample.txt --out runs/demo-001",
+                    ],
+                    "proof_commands": [
+                        "demo-cli doctor --json",
+                    ],
+                    "artifact_examples": [
+                        "result.json with trace metadata",
+                    ],
+                    "safety_notes": [
+                        "manual review before publishing",
+                    ],
+                },
+            ],
+            "shipped_workflow_slices": [
+                {
+                    "workflow": "Raw idea -> reviewable package",
+                    "current_surface": "demo-cli run, inspect, check",
+                    "why_it_matters": "Turns prompts into inspectable artifacts.",
+                }
+            ],
+            "supporting_repositories": [
+                {
+                    "repo": "systems-lab",
+                    "url": "https://github.com/dyrc9/systems-lab",
+                    "why": "Systems practice that supports the tooling layer.",
+                }
+            ],
+            "next_build_targets": [
+                "trace viewer",
+            ],
+        }
+        self.readme_text = """
+## Active Product Surface
+
+| Repository | Product value | Status |
+| --- | --- | --- |
+| [demo-runtime](https://github.com/dyrc9/demo-runtime) | Reusable runtime layer for providers, tools, and traces. | Core runtime bet |
+| [demo-cli](https://github.com/dyrc9/demo-cli) | Workflow CLI with inspectable outputs and quality gates. | Working CLI product |
+
+## Local Quickstarts
+
+<!-- portfolio-quickstarts:start -->
+
+Use these local commands to demonstrate the operator-facing surfaces of the workflow CLIs:
+
+### `demo-cli`
+
+Workflow CLI with inspectable outputs and quality gates.
+
+```bash
+demo-cli doctor
+demo-cli run sample.txt --out runs/demo-001
+```
+
+<!-- portfolio-quickstarts:end -->
+
+## Shipped Workflow Slices
+
+| Workflow | Current surface | Why it matters |
+| --- | --- | --- |
+| Raw idea -> reviewable package | demo-cli run, inspect, check | Turns prompts into inspectable artifacts. |
+
+## Proof Commands
+
+<!-- portfolio-proof-commands:start -->
+
+Run these commands to show concrete operator-facing behavior, preflight checks, and quality gates:
+
+### `demo-cli`
+
+- `demo-cli doctor --json`
+
+<!-- portfolio-proof-commands:end -->
+
+## Supporting Repositories
+
+| Repository | Why it matters |
+| --- | --- |
+| [systems-lab](https://github.com/dyrc9/systems-lab) | Systems practice that supports the tooling layer. |
+
+## Artifact Examples
+
+<!-- portfolio-artifact-examples:start -->
+
+These are the concrete files or outputs an operator should expect from the workflow products:
+
+### `demo-cli`
+
+- result.json with trace metadata
+
+<!-- portfolio-artifact-examples:end -->
+
+## Safety Guardrails
+
+<!-- portfolio-safety-notes:start -->
+
+These are the explicit guardrails attached to workflow products that could otherwise invite unsafe automation:
+
+### `demo-cli`
+
+- manual review before publishing
+
+<!-- portfolio-safety-notes:end -->
+
+## Next Build Targets
+
+<!-- portfolio-next-targets:start -->
+
+- trace viewer
+
+<!-- portfolio-next-targets:end -->
+"""
+
+    def test_build_report_summarizes_portfolio_health(self) -> None:
+        errors: list[str] = []
+
+        MODULE.validate_top_level(self.data, errors)
+        MODULE.validate_active_products("dyrc9", self.data["active_products"], errors)
+        MODULE.validate_supporting_repositories("dyrc9", self.data["supporting_repositories"], errors)
+        MODULE.validate_readme(self.readme_text, self.data, errors)
+        report = MODULE.build_report(self.data, errors)
+
+        self.assertEqual(
+            report,
+            {
+                "ok": True,
+                "owner": "dyrc9",
+                "counts": {
+                    "active_products": 2,
+                    "workflow_slices": 1,
+                    "supporting_repositories": 1,
+                    "next_build_targets": 1,
+                },
+                "active_product_categories": {
+                    "runtime": 1,
+                    "workflow-cli": 1,
+                },
+                "workflow_cli_repos": ["demo-cli"],
+                "repos_with_proof_commands": ["demo-cli"],
+                "repos_with_artifact_examples": ["demo-cli"],
+                "repos_with_safety_notes": ["demo-cli"],
+                "readme_in_sync": True,
+                "errors": [],
+            },
+        )
+
+    def test_main_json_outputs_machine_readable_failures(self) -> None:
+        broken_readme = self.readme_text.replace("manual review before publishing", "skip review")
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+
+        with (
+            mock.patch.object(MODULE, "load_json", side_effect=[self.data, {}]),
+            mock.patch.object(MODULE, "load_text", return_value=broken_readme),
+            contextlib.redirect_stdout(stdout),
+            contextlib.redirect_stderr(stderr),
+        ):
+            exit_code = MODULE.main(["--json"])
+
+        self.assertEqual(exit_code, 1)
+        self.assertEqual(stderr.getvalue(), "")
+
+        payload = json.loads(stdout.getvalue())
+        self.assertFalse(payload["ok"])
+        self.assertFalse(payload["readme_in_sync"])
+        self.assertEqual(payload["workflow_cli_repos"], ["demo-cli"])
+        self.assertIn(
+            "README managed 'Safety Guardrails' section must be regenerated from portfolio.json",
+            payload["errors"],
         )
 
 
