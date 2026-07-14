@@ -549,6 +549,8 @@ def validate_active_products(owner: str, products: object, errors: list[str]) ->
 
         if category == "workflow-cli":
             ensure(is_string_list(product.get("local_quickstart")), f"{prefix}.local_quickstart is required for workflow-cli products", errors)
+            ensure(is_string_list(product.get("proof_commands")), f"{prefix}.proof_commands is required for workflow-cli products", errors)
+            ensure(is_string_list(product.get("artifact_examples")), f"{prefix}.artifact_examples is required for workflow-cli products", errors)
 
         if "local_quickstart" in product and product.get("local_quickstart") is not None:
             ensure(is_string_list(product.get("local_quickstart")), f"{prefix}.local_quickstart must be a non-empty list of strings", errors)
@@ -645,6 +647,8 @@ def build_report(data: dict[str, object], errors: list[str]) -> dict[str, object
     proof_command_repos: list[str] = []
     artifact_example_repos: list[str] = []
     safety_note_repos: list[str] = []
+    workflow_cli_with_operator_docs: list[str] = []
+    workflow_cli_missing_operator_docs: dict[str, list[str]] = {}
 
     for product in products:
         if not isinstance(product, dict):
@@ -658,11 +662,26 @@ def build_report(data: dict[str, object], errors: list[str]) -> dict[str, object
         if not isinstance(repo, str):
             continue
 
+        has_quickstart = is_string_list(product.get("local_quickstart"))
+        has_proof_commands = is_string_list(product.get("proof_commands"))
+        has_artifact_examples = is_string_list(product.get("artifact_examples"))
+
         if category == "workflow-cli":
             workflow_cli_repos.append(repo)
-        if is_string_list(product.get("proof_commands")):
+            if has_quickstart and has_proof_commands and has_artifact_examples:
+                workflow_cli_with_operator_docs.append(repo)
+            else:
+                missing_fields: list[str] = []
+                if not has_quickstart:
+                    missing_fields.append("local_quickstart")
+                if not has_proof_commands:
+                    missing_fields.append("proof_commands")
+                if not has_artifact_examples:
+                    missing_fields.append("artifact_examples")
+                workflow_cli_missing_operator_docs[repo] = missing_fields
+        if has_proof_commands:
             proof_command_repos.append(repo)
-        if is_string_list(product.get("artifact_examples")):
+        if has_artifact_examples:
             artifact_example_repos.append(repo)
         if is_string_list(product.get("safety_notes")):
             safety_note_repos.append(repo)
@@ -678,6 +697,8 @@ def build_report(data: dict[str, object], errors: list[str]) -> dict[str, object
         },
         "active_product_categories": dict(sorted(category_counts.items())),
         "workflow_cli_repos": workflow_cli_repos,
+        "workflow_cli_with_operator_docs": workflow_cli_with_operator_docs,
+        "workflow_cli_missing_operator_docs": workflow_cli_missing_operator_docs,
         "repos_with_proof_commands": proof_command_repos,
         "repos_with_artifact_examples": artifact_example_repos,
         "repos_with_safety_notes": safety_note_repos,

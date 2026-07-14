@@ -1054,6 +1054,8 @@ These are the explicit guardrails attached to workflow products that could other
                     "workflow-cli": 1,
                 },
                 "workflow_cli_repos": ["demo-cli"],
+                "workflow_cli_with_operator_docs": ["demo-cli"],
+                "workflow_cli_missing_operator_docs": {},
                 "repos_with_proof_commands": ["demo-cli"],
                 "repos_with_artifact_examples": ["demo-cli"],
                 "repos_with_safety_notes": ["demo-cli"],
@@ -1082,9 +1084,51 @@ These are the explicit guardrails attached to workflow products that could other
         self.assertFalse(payload["ok"])
         self.assertFalse(payload["readme_in_sync"])
         self.assertEqual(payload["workflow_cli_repos"], ["demo-cli"])
+        self.assertEqual(payload["workflow_cli_with_operator_docs"], ["demo-cli"])
+        self.assertEqual(payload["workflow_cli_missing_operator_docs"], {})
         self.assertIn(
             "README managed 'Safety Guardrails' section must be regenerated from portfolio.json",
             payload["errors"],
+        )
+
+    def test_validate_active_products_requires_workflow_cli_proof_commands(self) -> None:
+        data = json.loads(json.dumps(self.data))
+        del data["active_products"][1]["proof_commands"]
+
+        errors: list[str] = []
+
+        MODULE.validate_active_products(data["owner"], data["active_products"], errors)
+
+        self.assertIn(
+            "active_products[1].proof_commands is required for workflow-cli products",
+            errors,
+        )
+
+    def test_validate_active_products_requires_workflow_cli_artifact_examples(self) -> None:
+        data = json.loads(json.dumps(self.data))
+        del data["active_products"][1]["artifact_examples"]
+
+        errors: list[str] = []
+
+        MODULE.validate_active_products(data["owner"], data["active_products"], errors)
+
+        self.assertIn(
+            "active_products[1].artifact_examples is required for workflow-cli products",
+            errors,
+        )
+
+    def test_build_report_tracks_workflow_cli_operator_doc_gaps(self) -> None:
+        data = json.loads(json.dumps(self.data))
+        del data["active_products"][1]["artifact_examples"]
+        errors = ["active_products[1].artifact_examples is required for workflow-cli products"]
+
+        report = MODULE.build_report(data, errors)
+
+        self.assertEqual(report["workflow_cli_repos"], ["demo-cli"])
+        self.assertEqual(report["workflow_cli_with_operator_docs"], [])
+        self.assertEqual(
+            report["workflow_cli_missing_operator_docs"],
+            {"demo-cli": ["artifact_examples"]},
         )
 
 
