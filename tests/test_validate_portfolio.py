@@ -884,6 +884,62 @@ These are the explicit guardrails attached to workflow products that could other
         )
 
 
+class ValidatePortfolioSchemaTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.schema = MODULE.load_json(MODULE.SCHEMA_PATH)
+        self.data = MODULE.load_json(MODULE.PORTFOLIO_PATH)
+
+    def test_schema_accepts_current_manifest(self) -> None:
+        errors: list[str] = []
+
+        MODULE.validate_declared_properties(self.data, self.schema, self.schema, errors)
+
+        self.assertEqual(errors, [])
+
+    def test_schema_rejects_unknown_product_fields(self) -> None:
+        data = json.loads(json.dumps(self.data))
+        data["active_products"][0]["proof_command"] = ["typo should fail closed"]
+        errors: list[str] = []
+
+        MODULE.validate_declared_properties(data, self.schema, self.schema, errors)
+
+        self.assertIn(
+            "schema $.active_products[0].proof_command: undeclared property is not allowed",
+            errors,
+        )
+
+    def test_schema_rejects_unknown_nested_fields(self) -> None:
+        data = json.loads(json.dumps(self.data))
+        data["positioning"]["tagline"] = "undeclared copy"
+        errors: list[str] = []
+
+        MODULE.validate_declared_properties(data, self.schema, self.schema, errors)
+
+        self.assertIn(
+            "schema $.positioning.tagline: undeclared property is not allowed",
+            errors,
+        )
+
+    def test_main_json_rejects_unknown_manifest_fields(self) -> None:
+        data = json.loads(json.dumps(self.data))
+        data["active_products"][0]["unexpected"] = True
+        stdout = io.StringIO()
+
+        with (
+            mock.patch.object(MODULE, "load_json", side_effect=[data, self.schema]),
+            mock.patch.object(MODULE, "load_text", return_value=MODULE.load_text(MODULE.README_PATH)),
+            contextlib.redirect_stdout(stdout),
+        ):
+            exit_code = MODULE.main(["--json"])
+
+        self.assertEqual(exit_code, 1)
+        payload = json.loads(stdout.getvalue())
+        self.assertIn(
+            "schema $.active_products[0].unexpected: undeclared property is not allowed",
+            payload["errors"],
+        )
+
+
 class ValidatePortfolioJsonReportTests(unittest.TestCase):
     def setUp(self) -> None:
         self.data = {

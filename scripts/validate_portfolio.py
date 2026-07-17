@@ -49,6 +49,67 @@ def is_string_list(value: object) -> bool:
     return isinstance(value, list) and bool(value) and all(is_non_empty_string(item) for item in value)
 
 
+def resolve_local_schema_ref(root_schema: dict[str, object], reference: str) -> dict[str, object]:
+    if not reference.startswith("#/"):
+        raise ValueError(f"only local schema references are supported: {reference}")
+
+    current: object = root_schema
+    for raw_token in reference[2:].split("/"):
+        token = raw_token.replace("~1", "/").replace("~0", "~")
+        if not isinstance(current, dict) or token not in current:
+            raise ValueError(f"unresolved schema reference: {reference}")
+        current = current[token]
+
+    if not isinstance(current, dict):
+        raise ValueError(f"schema reference must resolve to an object: {reference}")
+    return current
+
+
+def validate_declared_properties(
+    value: object,
+    schema: dict[str, object],
+    root_schema: dict[str, object],
+    errors: list[str],
+    path: str = "$",
+) -> None:
+    reference = schema.get("$ref")
+    if isinstance(reference, str):
+        try:
+            schema = resolve_local_schema_ref(root_schema, reference)
+        except ValueError as exc:
+            errors.append(f"schema definition {path}: {exc}")
+            return
+
+    if isinstance(value, dict):
+        properties = schema.get("properties")
+        declared_properties = properties if isinstance(properties, dict) else {}
+        if schema.get("additionalProperties") is False:
+            for property_name in sorted(set(value).difference(declared_properties)):
+                errors.append(f"schema {path}.{property_name}: undeclared property is not allowed")
+
+        for property_name, child_schema in declared_properties.items():
+            if property_name in value and isinstance(child_schema, dict):
+                validate_declared_properties(
+                    value[property_name],
+                    child_schema,
+                    root_schema,
+                    errors,
+                    f"{path}.{property_name}",
+                )
+
+    if isinstance(value, list):
+        items = schema.get("items")
+        if isinstance(items, dict):
+            for index, item in enumerate(value):
+                validate_declared_properties(
+                    item,
+                    items,
+                    root_schema,
+                    errors,
+                    f"{path}[{index}]",
+                )
+
+
 def validate_top_level(data: dict[str, object], errors: list[str]) -> None:
     required = {
         "version",
@@ -962,7 +1023,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     try:
-        load_json(SCHEMA_PATH)
+        schema = load_json(SCHEMA_PATH)
     except FileNotFoundError:
         print(f"missing file: {SCHEMA_PATH}", file=sys.stderr)
         return 1
@@ -977,10 +1038,23 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     ensure(isinstance(data, dict), "portfolio.json must contain a top-level object", errors)
+    ensure(isinstance(schema, dict), "portfolio.schema.json must contain a top-level object", errors)
+
+    if isinstance(schema, dict):
+        validate_declared_properties(data, schema, schema, errors)
+
     if not isinstance(data, dict):
         report = {"ok": False, "errors": errors}
         if json_output:
             print(json.dumps(report, indent=2))
+        else:
+            for error in errors:
+                print(f"ERROR: {error}", file=sys.stderr)
+        return 1
+
+    if argv == ["--sync-readme"] and errors:
+        if json_output:
+            print(json.dumps(build_report(data, errors), indent=2))
         else:
             for error in errors:
                 print(f"ERROR: {error}", file=sys.stderr)
