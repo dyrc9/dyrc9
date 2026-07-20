@@ -49,6 +49,27 @@ def is_string_list(value: object) -> bool:
     return isinstance(value, list) and bool(value) and all(is_non_empty_string(item) for item in value)
 
 
+def validate_unique_string_list(value: object, field: str, errors: list[str]) -> None:
+    if not is_string_list(value):
+        return
+
+    normalized = [item.strip() for item in value]
+    ensure(len(normalized) == len(set(normalized)), f"{field} entries must be unique", errors)
+
+
+def validate_cli_commands(value: object, repo: object, field: str, errors: list[str]) -> None:
+    if not is_string_list(value) or not is_non_empty_string(repo):
+        return
+
+    expected_prefix = f"{repo.strip()} "
+    for index, command in enumerate(value):
+        ensure(
+            command.strip().startswith(expected_prefix),
+            f"{field}[{index}] must invoke the {repo.strip()} CLI",
+            errors,
+        )
+
+
 def resolve_local_schema_ref(root_schema: dict[str, object], reference: str) -> dict[str, object]:
     if not reference.startswith("#/"):
         raise ValueError(f"only local schema references are supported: {reference}")
@@ -624,6 +645,12 @@ def validate_active_products(owner: str, products: object, errors: list[str]) ->
 
         if "safety_notes" in product and product.get("safety_notes") is not None:
             ensure(is_string_list(product.get("safety_notes")), f"{prefix}.safety_notes must be a non-empty list of strings", errors)
+
+        for field in ("surface", "local_quickstart", "proof_commands", "artifact_examples", "safety_notes"):
+            validate_unique_string_list(product.get(field), f"{prefix}.{field}", errors)
+
+        validate_cli_commands(product.get("local_quickstart"), repo, f"{prefix}.local_quickstart", errors)
+        validate_cli_commands(product.get("proof_commands"), repo, f"{prefix}.proof_commands", errors)
 
 
 def validate_supporting_repositories(owner: str, repositories: object, errors: list[str]) -> None:

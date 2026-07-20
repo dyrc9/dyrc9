@@ -1173,6 +1173,44 @@ These are the explicit guardrails attached to workflow products that could other
             errors,
         )
 
+    def test_validate_active_products_rejects_duplicate_operator_docs(self) -> None:
+        product = {
+            "repo": "demo-cli",
+            "url": "https://github.com/dyrc9/demo-cli",
+            "category": "workflow-cli",
+            "status": "working-cli-product",
+            "value": "A demo workflow.",
+            "surface": ["run", "run"],
+            "local_quickstart": ["demo-cli doctor", "demo-cli doctor"],
+            "proof_commands": ["demo-cli check sample.json", "demo-cli check sample.json"],
+            "artifact_examples": ["result.json", "result.json"],
+        }
+        errors: list[str] = []
+
+        MODULE.validate_active_products("dyrc9", [product], errors)
+
+        for field in ("surface", "local_quickstart", "proof_commands", "artifact_examples"):
+            self.assertIn(f"active_products[0].{field} entries must be unique", errors)
+
+    def test_validate_active_products_requires_commands_to_invoke_product_cli(self) -> None:
+        product = {
+            "repo": "demo-cli",
+            "url": "https://github.com/dyrc9/demo-cli",
+            "category": "workflow-cli",
+            "status": "working-cli-product",
+            "value": "A demo workflow.",
+            "surface": ["run"],
+            "local_quickstart": ["python scripts/demo.py"],
+            "proof_commands": ["other-cli check sample.json"],
+            "artifact_examples": ["result.json"],
+        }
+        errors: list[str] = []
+
+        MODULE.validate_active_products("dyrc9", [product], errors)
+
+        self.assertIn("active_products[0].local_quickstart[0] must invoke the demo-cli CLI", errors)
+        self.assertIn("active_products[0].proof_commands[0] must invoke the demo-cli CLI", errors)
+
     def test_build_report_tracks_workflow_cli_operator_doc_gaps(self) -> None:
         data = json.loads(json.dumps(self.data))
         del data["active_products"][1]["artifact_examples"]
