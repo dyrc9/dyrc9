@@ -692,6 +692,7 @@ def validate_workflow_slices(workflow_slices: object, errors: list[str]) -> None
             continue
 
         workflow = workflow_slice.get("workflow")
+        ensure(is_non_empty_string(workflow_slice.get("product_repo")), f"{prefix}.product_repo must be a non-empty string", errors)
         ensure(is_non_empty_string(workflow), f"{prefix}.workflow must be a non-empty string", errors)
         ensure(is_non_empty_string(workflow_slice.get("current_surface")), f"{prefix}.current_surface must be a non-empty string", errors)
         ensure(is_non_empty_string(workflow_slice.get("why_it_matters")), f"{prefix}.why_it_matters must be a non-empty string", errors)
@@ -699,6 +700,31 @@ def validate_workflow_slices(workflow_slices: object, errors: list[str]) -> None
         if isinstance(workflow, str):
             ensure(workflow not in seen_workflows, f"{prefix}.workflow must be unique: {workflow}", errors)
             seen_workflows.add(workflow)
+
+
+def validate_workflow_slice_products(
+    workflow_slices: object,
+    active_products: object,
+    errors: list[str],
+) -> None:
+    if not isinstance(workflow_slices, list) or not isinstance(active_products, list):
+        return
+
+    active_repos = {
+        product.get("repo")
+        for product in active_products
+        if isinstance(product, dict) and is_non_empty_string(product.get("repo"))
+    }
+    for index, workflow_slice in enumerate(workflow_slices):
+        if not isinstance(workflow_slice, dict):
+            continue
+        product_repo = workflow_slice.get("product_repo")
+        if is_non_empty_string(product_repo):
+            ensure(
+                product_repo in active_repos,
+                f"shipped_workflow_slices[{index}].product_repo must reference an active product: {product_repo}",
+                errors,
+            )
 
 
 def validate_readme(readme_text: str, data: dict[str, object], errors: list[str]) -> None:
@@ -737,6 +763,7 @@ def build_report(data: dict[str, object], errors: list[str]) -> dict[str, object
     safety_note_repos: list[str] = []
     workflow_cli_with_operator_docs: list[str] = []
     workflow_cli_missing_operator_docs: dict[str, list[str]] = {}
+    workflow_slice_repos: list[str] = []
 
     for product in products:
         if not isinstance(product, dict):
@@ -774,6 +801,13 @@ def build_report(data: dict[str, object], errors: list[str]) -> dict[str, object
         if is_string_list(product.get("safety_notes")):
             safety_note_repos.append(repo)
 
+    if isinstance(workflow_slices, list):
+        workflow_slice_repos = list(dict.fromkeys(
+            workflow_slice.get("product_repo")
+            for workflow_slice in workflow_slices
+            if isinstance(workflow_slice, dict) and is_non_empty_string(workflow_slice.get("product_repo"))
+        ))
+
     return {
         "ok": not errors,
         "owner": data.get("owner"),
@@ -787,6 +821,7 @@ def build_report(data: dict[str, object], errors: list[str]) -> dict[str, object
         "workflow_cli_repos": workflow_cli_repos,
         "workflow_cli_with_operator_docs": workflow_cli_with_operator_docs,
         "workflow_cli_missing_operator_docs": workflow_cli_missing_operator_docs,
+        "workflow_slice_repos": workflow_slice_repos,
         "repos_with_proof_commands": proof_command_repos,
         "repos_with_artifact_examples": artifact_example_repos,
         "repos_with_safety_notes": safety_note_repos,
@@ -1096,6 +1131,11 @@ def main(argv: list[str] | None = None) -> int:
     if isinstance(owner, str):
         validate_active_products(owner, data.get("active_products"), errors)
         validate_supporting_repositories(owner, data.get("supporting_repositories"), errors)
+        validate_workflow_slice_products(
+            data.get("shipped_workflow_slices"),
+            data.get("active_products"),
+            errors,
+        )
         validate_readme(readme_text, data, errors)
 
     report = build_report(data, errors)

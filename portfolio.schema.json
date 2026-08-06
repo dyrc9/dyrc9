@@ -169,11 +169,16 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "product_repo",
         "workflow",
         "current_surface",
         "why_it_matters"
       ],
       "properties": {
+        "product_repo": {
+          "type": "string",
+          "minLength": 1
+        },
         "workflow": {
           "type": "string",
           "minLength": 1

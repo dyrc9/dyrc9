@@ -46,6 +46,7 @@ class ValidatePortfolioReadmeTests(unittest.TestCase):
             ],
             "shipped_workflow_slices": [
                 {
+                    "product_repo": "demo-agent",
                     "workflow": "Raw idea to publish package",
                     "current_surface": "demo-agent draft, inspect, check",
                     "why_it_matters": "Turns a rough prompt into a reviewable package.",
@@ -987,6 +988,7 @@ class ValidatePortfolioJsonReportTests(unittest.TestCase):
             ],
             "shipped_workflow_slices": [
                 {
+                    "product_repo": "demo-cli",
                     "workflow": "Raw idea -> reviewable package",
                     "current_surface": "demo-cli run, inspect, check",
                     "why_it_matters": "Turns prompts into inspectable artifacts.",
@@ -1112,6 +1114,7 @@ These are the explicit guardrails attached to workflow products that could other
                 "workflow_cli_repos": ["demo-cli"],
                 "workflow_cli_with_operator_docs": ["demo-cli"],
                 "workflow_cli_missing_operator_docs": {},
+                "workflow_slice_repos": ["demo-cli"],
                 "repos_with_proof_commands": ["demo-cli"],
                 "repos_with_artifact_examples": ["demo-cli"],
                 "repos_with_safety_notes": ["demo-cli"],
@@ -1142,6 +1145,7 @@ These are the explicit guardrails attached to workflow products that could other
         self.assertEqual(payload["workflow_cli_repos"], ["demo-cli"])
         self.assertEqual(payload["workflow_cli_with_operator_docs"], ["demo-cli"])
         self.assertEqual(payload["workflow_cli_missing_operator_docs"], {})
+        self.assertEqual(payload["workflow_slice_repos"], ["demo-cli"])
         self.assertIn(
             "README managed 'Safety Guardrails' section must be regenerated from portfolio.json",
             payload["errors"],
@@ -1223,6 +1227,34 @@ These are the explicit guardrails attached to workflow products that could other
         self.assertEqual(
             report["workflow_cli_missing_operator_docs"],
             {"demo-cli": ["artifact_examples"]},
+        )
+
+    def test_validate_workflow_slices_requires_product_repo(self) -> None:
+        workflow_slices = json.loads(json.dumps(self.data["shipped_workflow_slices"]))
+        del workflow_slices[0]["product_repo"]
+        errors: list[str] = []
+
+        MODULE.validate_workflow_slices(workflow_slices, errors)
+
+        self.assertIn(
+            "shipped_workflow_slices[0].product_repo must be a non-empty string",
+            errors,
+        )
+
+    def test_validate_workflow_slice_products_rejects_unknown_product(self) -> None:
+        workflow_slices = json.loads(json.dumps(self.data["shipped_workflow_slices"]))
+        workflow_slices[0]["product_repo"] = "retired-agent"
+        errors: list[str] = []
+
+        MODULE.validate_workflow_slice_products(
+            workflow_slices,
+            self.data["active_products"],
+            errors,
+        )
+
+        self.assertIn(
+            "shipped_workflow_slices[0].product_repo must reference an active product: retired-agent",
+            errors,
         )
 
 
