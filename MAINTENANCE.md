@@ -1,95 +1,77 @@
-# GitHub Maintenance Plan
+# Product Maintenance Roadmap
 
-This profile is being maintained as an AI Agent and Harness Engineering portfolio.
+This profile is maintained as an AI Agent / Harness Engineering product portfolio. Roadmap items move only when a repository ships operator-visible evidence: a runnable command, an inspectable artifact, or an automated quality check.
 
-## Positioning
+## Shipped Foundation
 
-Primary identity:
+- `sushi-agent`: embeddable TypeScript and Rust runtime surface for providers, skills, MCP, and local tools.
+- `agent-meeting-notes`: working CLI from long audio to transcript, summary, structured notes, and quality checks.
+- `xhs-content-agent`: human-reviewed CLI from raw idea to draft, calendar, publish package, and strict checks.
+- `dyrc9`: machine-readable portfolio manifest, generated README sections, schema validation, and CI drift checks.
 
-- AI Agent Engineer
-- Harness Engineer
-- Developer tooling and workflow automation builder
+The common product contract is:
 
-Supporting themes:
+```text
+source input -> staged processing -> inspectable artifact -> quality gate -> human or system decision
+```
 
-- agent evaluation
-- tool-use orchestration
-- reproducible test environments
-- CLI automation
-- systems and security fundamentals
+## Now: Prove Repeatable Harness Evaluation
 
-## First Pass
+Build one compact evaluation slice around an existing product before starting another broad framework.
 
-- Create the `dyrc9` profile repository with a polished README.
-- Update GitHub profile metadata:
-  - name or display name
-  - short bio
-  - location, if desired
-  - website: `https://dyrc9.github.io`
-- Pin repositories that support the new direction:
-  - `dyrc9.github.io`
-  - `console-chat-gpt`
-  - `cwym`
-  - `CS353Project2`
-  - `Kitsune_prp`
+Recommended first target: `agent-meeting-notes`, using a deterministic transcript fixture so the evaluation does not require network access or model credentials.
 
-## Next Repositories To Build
+Definition of done:
 
-### sushi-agent
+- one versioned task fixture with explicit inputs and expected outcomes
+- one command that runs the fixture locally
+- a durable JSON result containing task version, checks, pass/fail status, and timing
+- at least one passing and one intentionally failing test case
+- CI coverage for the runner and result schema
+- a README example showing the command, artifact, and failure diagnosis
 
-A thin TypeScript + Rust agent runtime that can be embedded into existing systems.
+## Next: Make Runs Comparable
 
-Initial scope:
+Once the first evaluation slice is stable:
 
-- TypeScript SDK for model providers, skills, tools, traces, and MCP stdio clients
-- Rust utilities for fast local file and text operations
-- examples that show how to plug the runtime into real products
-- scheduled CI and dependency maintenance
+- add a run identifier and configuration fingerprint to evaluation artifacts
+- retain normalized traces without secrets or raw credentials
+- compare two result artifacts and explain changed checks
+- document how an operator promotes a fixture change intentionally
 
-### agent-harness-lab
+Completion signal: a contributor can reproduce a run and identify why two runs differ without reading implementation code.
 
-A small public lab for testing AI agents against repeatable tasks.
+## Later: Extract Shared Harness Primitives
 
-Possible scope:
+Extract a separate `agent-harness-lab` only after two products need the same runner or result contract. Candidate shared primitives:
 
-- task definitions in JSON/YAML
-- a simple runner
-- transcript logging
-- pass/fail checks
-- example tasks for file editing, web research, and CLI usage
+- versioned task definitions
+- subprocess and tool-call adapters
+- transcript and trace normalization
+- deterministic assertions and rubric scoring
+- result comparison and regression summaries
 
-### tool-use-bench
+This avoids building a generic harness before the portfolio has concrete reuse pressure.
 
-A focused benchmark for tool-calling behavior.
+## Maintenance Cadence
 
-Possible scope:
+### Weekly
 
-- tool schema examples
-- expected tool call sequences
-- scoring scripts
-- failure case writeups
+- ship one operator-visible improvement in an active product
+- add or strengthen one regression check
+- verify that profile claims link to current product evidence
+- capture one failure mode or tradeoff in product documentation
 
-### agent-observer
+### Monthly
 
-A lightweight trace viewer for agent runs.
+- run every documented quickstart and proof command
+- review active-product status, repository descriptions, topics, and pins
+- archive roadmap items that no longer support the harness-engineering direction
+- promote only shipped work into the profile narrative
 
-Possible scope:
+## Scope Guardrails
 
-- local run logs
-- timeline view
-- token and latency summaries
-- error tagging
-
-## Weekly Rhythm
-
-- One small commit that improves profile clarity or project quality.
-- One note about an agent, harness, evaluation, or automation idea.
-- One repository cleanup action: README, topics, description, license, or pinned order.
-- Keep `sushi-agent` moving with one runtime, provider, MCP, or tooling improvement.
-
-## Monthly Rhythm
-
-- Publish one small working demo.
-- Review pinned repositories.
-- Archive or hide repositories that do not support the current story.
-- Update README focus based on what was actually built.
+- Prefer reproducible workflows over screenshot-only demos.
+- Keep artifacts inspectable, portable, and safe to retain.
+- Require human review for publishing or other external side effects.
+- Do not build engagement manipulation, CAPTCHA bypass, policy evasion, or spam automation.
