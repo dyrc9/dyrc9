@@ -1241,6 +1241,23 @@ These are the explicit guardrails attached to workflow products that could other
             errors,
         )
 
+    def test_validate_repository_classification_rejects_active_product_as_supporting(self) -> None:
+        supporting_repositories = json.loads(json.dumps(self.data["supporting_repositories"]))
+        supporting_repositories[0]["repo"] = "demo-cli"
+        supporting_repositories[0]["url"] = "https://github.com/dyrc9/demo-cli"
+        errors: list[str] = []
+
+        MODULE.validate_repository_classification(
+            self.data["active_products"],
+            supporting_repositories,
+            errors,
+        )
+
+        self.assertIn(
+            "supporting_repositories[0].repo must not also be an active product: demo-cli",
+            errors,
+        )
+
     def test_validate_workflow_slice_products_rejects_unknown_product(self) -> None:
         workflow_slices = json.loads(json.dumps(self.data["shipped_workflow_slices"]))
         workflow_slices[0]["product_repo"] = "retired-agent"

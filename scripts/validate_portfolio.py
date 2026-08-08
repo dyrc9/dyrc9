@@ -679,6 +679,31 @@ def validate_supporting_repositories(owner: str, repositories: object, errors: l
             ensure(url == expected_github_url(owner, repo), f"{prefix}.url must match owner/repo: {expected_github_url(owner, repo)}", errors)
 
 
+def validate_repository_classification(
+    active_products: object,
+    supporting_repositories: object,
+    errors: list[str],
+) -> None:
+    if not isinstance(active_products, list) or not isinstance(supporting_repositories, list):
+        return
+
+    active_repos = {
+        product.get("repo")
+        for product in active_products
+        if isinstance(product, dict) and is_non_empty_string(product.get("repo"))
+    }
+    for index, repository in enumerate(supporting_repositories):
+        if not isinstance(repository, dict):
+            continue
+        repo = repository.get("repo")
+        if is_non_empty_string(repo):
+            ensure(
+                repo not in active_repos,
+                f"supporting_repositories[{index}].repo must not also be an active product: {repo}",
+                errors,
+            )
+
+
 def validate_workflow_slices(workflow_slices: object, errors: list[str]) -> None:
     ensure(isinstance(workflow_slices, list) and bool(workflow_slices), "shipped_workflow_slices must be a non-empty list", errors)
     if not isinstance(workflow_slices, list):
@@ -1131,6 +1156,11 @@ def main(argv: list[str] | None = None) -> int:
     if isinstance(owner, str):
         validate_active_products(owner, data.get("active_products"), errors)
         validate_supporting_repositories(owner, data.get("supporting_repositories"), errors)
+        validate_repository_classification(
+            data.get("active_products"),
+            data.get("supporting_repositories"),
+            errors,
+        )
         validate_workflow_slice_products(
             data.get("shipped_workflow_slices"),
             data.get("active_products"),
