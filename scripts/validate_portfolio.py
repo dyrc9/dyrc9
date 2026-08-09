@@ -750,6 +750,13 @@ def validate_workflow_slice_products(
                 f"shipped_workflow_slices[{index}].product_repo must reference an active product: {product_repo}",
                 errors,
             )
+            current_surface = workflow_slice.get("current_surface")
+            if is_non_empty_string(current_surface):
+                ensure(
+                    normalize_comparable_text(product_repo) in normalize_comparable_text(current_surface),
+                    f"shipped_workflow_slices[{index}].current_surface must name its product repo: {product_repo}",
+                    errors,
+                )
 
 
 def validate_readme(readme_text: str, data: dict[str, object], errors: list[str]) -> None:

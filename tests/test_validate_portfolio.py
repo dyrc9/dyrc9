@@ -1274,6 +1274,22 @@ These are the explicit guardrails attached to workflow products that could other
             errors,
         )
 
+    def test_validate_workflow_slice_products_rejects_mismatched_surface_product(self) -> None:
+        workflow_slices = json.loads(json.dumps(self.data["shipped_workflow_slices"]))
+        workflow_slices[0]["current_surface"] = "other-cli run, inspect, check"
+        errors: list[str] = []
+
+        MODULE.validate_workflow_slice_products(
+            workflow_slices,
+            self.data["active_products"],
+            errors,
+        )
+
+        self.assertIn(
+            "shipped_workflow_slices[0].current_surface must name its product repo: demo-cli",
+            errors,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
