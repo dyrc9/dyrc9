@@ -988,6 +988,12 @@ class ValidatePortfolioJsonReportTests(unittest.TestCase):
             ],
             "shipped_workflow_slices": [
                 {
+                    "product_repo": "demo-runtime",
+                    "workflow": "Provider and tool runtime embedding",
+                    "current_surface": "demo-runtime providers and tool orchestration",
+                    "why_it_matters": "Provides a reusable execution layer for agent products.",
+                },
+                {
                     "product_repo": "demo-cli",
                     "workflow": "Raw idea -> reviewable package",
                     "current_surface": "demo-cli run, inspect, check",
@@ -1034,6 +1040,7 @@ demo-cli run sample.txt --out runs/demo-001
 
 | Workflow | Current surface | Why it matters |
 | --- | --- | --- |
+| Provider and tool runtime embedding | demo-runtime providers and tool orchestration | Provides a reusable execution layer for agent products. |
 | Raw idea -> reviewable package | demo-cli run, inspect, check | Turns prompts into inspectable artifacts. |
 
 ## Proof Commands
@@ -1103,7 +1110,7 @@ These are the explicit guardrails attached to workflow products that could other
                 "owner": "dyrc9",
                 "counts": {
                     "active_products": 2,
-                    "workflow_slices": 1,
+                    "workflow_slices": 2,
                     "supporting_repositories": 1,
                     "next_build_targets": 1,
                 },
@@ -1114,7 +1121,9 @@ These are the explicit guardrails attached to workflow products that could other
                 "workflow_cli_repos": ["demo-cli"],
                 "workflow_cli_with_operator_docs": ["demo-cli"],
                 "workflow_cli_missing_operator_docs": {},
-                "workflow_slice_repos": ["demo-cli"],
+                "workflow_slice_repos": ["demo-runtime", "demo-cli"],
+                "evidence_required_repos": ["demo-runtime", "demo-cli"],
+                "evidence_missing_repos": [],
                 "repos_with_proof_commands": ["demo-cli"],
                 "repos_with_artifact_examples": ["demo-cli"],
                 "repos_with_safety_notes": ["demo-cli"],
@@ -1145,7 +1154,8 @@ These are the explicit guardrails attached to workflow products that could other
         self.assertEqual(payload["workflow_cli_repos"], ["demo-cli"])
         self.assertEqual(payload["workflow_cli_with_operator_docs"], ["demo-cli"])
         self.assertEqual(payload["workflow_cli_missing_operator_docs"], {})
-        self.assertEqual(payload["workflow_slice_repos"], ["demo-cli"])
+        self.assertEqual(payload["workflow_slice_repos"], ["demo-runtime", "demo-cli"])
+        self.assertEqual(payload["evidence_missing_repos"], [])
         self.assertIn(
             "README managed 'Safety Guardrails' section must be regenerated from portfolio.json",
             payload["errors"],
@@ -1260,7 +1270,7 @@ These are the explicit guardrails attached to workflow products that could other
 
     def test_validate_workflow_slice_products_rejects_unknown_product(self) -> None:
         workflow_slices = json.loads(json.dumps(self.data["shipped_workflow_slices"]))
-        workflow_slices[0]["product_repo"] = "retired-agent"
+        workflow_slices[1]["product_repo"] = "retired-agent"
         errors: list[str] = []
 
         MODULE.validate_workflow_slice_products(
@@ -1270,13 +1280,13 @@ These are the explicit guardrails attached to workflow products that could other
         )
 
         self.assertIn(
-            "shipped_workflow_slices[0].product_repo must reference an active product: retired-agent",
+            "shipped_workflow_slices[1].product_repo must reference an active product: retired-agent",
             errors,
         )
 
     def test_validate_workflow_slice_products_rejects_mismatched_surface_product(self) -> None:
         workflow_slices = json.loads(json.dumps(self.data["shipped_workflow_slices"]))
-        workflow_slices[0]["current_surface"] = "other-cli run, inspect, check"
+        workflow_slices[1]["current_surface"] = "other-cli run, inspect, check"
         errors: list[str] = []
 
         MODULE.validate_workflow_slice_products(
@@ -1286,9 +1296,41 @@ These are the explicit guardrails attached to workflow products that could other
         )
 
         self.assertIn(
-            "shipped_workflow_slices[0].current_surface must name its product repo: demo-cli",
+            "shipped_workflow_slices[1].current_surface must name its product repo: demo-cli",
             errors,
         )
+
+    def test_validate_active_product_evidence_requires_runtime_and_cli_slices(self) -> None:
+        errors: list[str] = []
+
+        MODULE.validate_active_product_evidence(
+            self.data["active_products"],
+            self.data["shipped_workflow_slices"][1:],
+            errors,
+        )
+
+        self.assertIn(
+            "active_products[0].repo must have a shipped workflow slice: demo-runtime",
+            errors,
+        )
+
+    def test_validate_active_product_evidence_exempts_public_surfaces(self) -> None:
+        products = json.loads(json.dumps(self.data["active_products"]))
+        products.append(
+            {
+                "repo": "profile-site",
+                "category": "public-surface",
+            }
+        )
+        errors: list[str] = []
+
+        MODULE.validate_active_product_evidence(
+            products,
+            self.data["shipped_workflow_slices"],
+            errors,
+        )
+
+        self.assertEqual(errors, [])
 
 
 if __name__ == "__main__":
