@@ -188,7 +188,7 @@ The next layer I want to make more explicit in public repos:
 
 <!-- portfolio-next-targets:start -->
 
-- compact agent harness lab with repeatable tasks and pass/fail checks
+- deterministic offline evaluation fixture for agent-meeting-notes with durable JSON results and pass/fail checks
 - stronger trace and evaluation surfaces around tool use
 - more examples that show how CLI products fit into actual operator workflows
 
