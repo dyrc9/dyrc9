@@ -970,7 +970,7 @@ class ValidatePortfolioJsonReportTests(unittest.TestCase):
                     "category": "workflow-cli",
                     "status": "working-cli-product",
                     "value": "Workflow CLI with inspectable outputs and quality gates.",
-                    "surface": ["run", "inspect", "check"],
+                    "surface": ["doctor", "run", "inspect", "check"],
                     "local_quickstart": [
                         "demo-cli doctor",
                         "demo-cli run sample.txt --out runs/demo-001",
@@ -1224,6 +1224,31 @@ These are the explicit guardrails attached to workflow products that could other
 
         self.assertIn("active_products[0].local_quickstart[0] must invoke the demo-cli CLI", errors)
         self.assertIn("active_products[0].proof_commands[0] must invoke the demo-cli CLI", errors)
+
+    def test_validate_active_products_requires_documented_commands_to_match_surface(self) -> None:
+        product = {
+            "repo": "demo-cli",
+            "url": "https://github.com/dyrc9/demo-cli",
+            "category": "workflow-cli",
+            "status": "working-cli-product",
+            "value": "A test workflow CLI.",
+            "surface": ["doctor", "run", "check"],
+            "local_quickstart": ["demo-cli launch sample.txt"],
+            "proof_commands": ["demo-cli verify sample.json"],
+            "artifact_examples": ["result.json"],
+        }
+        errors: list[str] = []
+
+        MODULE.validate_active_products("dyrc9", [product], errors)
+
+        self.assertIn(
+            "active_products[0].local_quickstart[0] must use a command declared in active_products[0].surface",
+            errors,
+        )
+        self.assertIn(
+            "active_products[0].proof_commands[0] must use a command declared in active_products[0].surface",
+            errors,
+        )
 
     def test_build_report_tracks_workflow_cli_operator_doc_gaps(self) -> None:
         data = json.loads(json.dumps(self.data))

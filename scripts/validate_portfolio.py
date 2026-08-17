@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
 import sys
 from collections import Counter
 from pathlib import Path
@@ -57,15 +58,38 @@ def validate_unique_string_list(value: object, field: str, errors: list[str]) ->
     ensure(len(normalized) == len(set(normalized)), f"{field} entries must be unique", errors)
 
 
-def validate_cli_commands(value: object, repo: object, field: str, errors: list[str]) -> None:
+def validate_cli_commands(
+    value: object,
+    repo: object,
+    surface: object,
+    field: str,
+    errors: list[str],
+) -> None:
     if not is_string_list(value) or not is_non_empty_string(repo):
         return
 
     expected_prefix = f"{repo.strip()} "
+    declared_commands = {
+        item.strip()
+        for item in surface
+        if isinstance(item, str) and item.strip()
+    } if isinstance(surface, list) else set()
     for index, command in enumerate(value):
+        stripped = command.strip()
+        invokes_product = stripped.startswith(expected_prefix)
+        ensure(invokes_product, f"{field}[{index}] must invoke the {repo.strip()} CLI", errors)
+        if not invokes_product or not declared_commands:
+            continue
+
+        try:
+            arguments = shlex.split(stripped)
+        except ValueError:
+            errors.append(f"{field}[{index}] must be a valid shell command")
+            continue
+
         ensure(
-            command.strip().startswith(expected_prefix),
-            f"{field}[{index}] must invoke the {repo.strip()} CLI",
+            len(arguments) >= 2 and arguments[1] in declared_commands,
+            f"{field}[{index}] must use a command declared in {field.rsplit('.', 1)[0]}.surface",
             errors,
         )
 
@@ -649,8 +673,8 @@ def validate_active_products(owner: str, products: object, errors: list[str]) ->
         for field in ("surface", "local_quickstart", "proof_commands", "artifact_examples", "safety_notes"):
             validate_unique_string_list(product.get(field), f"{prefix}.{field}", errors)
 
-        validate_cli_commands(product.get("local_quickstart"), repo, f"{prefix}.local_quickstart", errors)
-        validate_cli_commands(product.get("proof_commands"), repo, f"{prefix}.proof_commands", errors)
+        validate_cli_commands(product.get("local_quickstart"), repo, product.get("surface"), f"{prefix}.local_quickstart", errors)
+        validate_cli_commands(product.get("proof_commands"), repo, product.get("surface"), f"{prefix}.proof_commands", errors)
 
 
 def validate_supporting_repositories(owner: str, repositories: object, errors: list[str]) -> None:

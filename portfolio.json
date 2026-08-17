@@ -32,6 +32,7 @@
       "status": "working-cli-product",
       "value": "Long-audio transcription and meeting-notes harness with chunking, structured outputs, and exportable artifacts.",
       "surface": [
+        "doctor",
         "run",
         "probe",
         "estimate",
@@ -61,6 +62,7 @@
       "status": "working-cli-product",
       "value": "Human-reviewed content pipeline for Xiaohongshu and RedNote drafts, calendars, and publish packages.",
       "surface": [
+        "doctor",
         "draft",
         "calendar",
         "titles",
