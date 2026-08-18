@@ -74,6 +74,7 @@ def validate_cli_commands(
         for item in surface
         if isinstance(item, str) and item.strip()
     } if isinstance(surface, list) else set()
+    shell_control_tokens = {"&&", "||", ";", "|", ">", ">>", "<", "<<"}
     for index, command in enumerate(value):
         stripped = command.strip()
         invokes_product = stripped.startswith(expected_prefix)
@@ -82,10 +83,18 @@ def validate_cli_commands(
             continue
 
         try:
-            arguments = shlex.split(stripped)
+            lexer = shlex.shlex(stripped, posix=True, punctuation_chars=";&|<>")
+            lexer.whitespace_split = True
+            arguments = list(lexer)
         except ValueError:
             errors.append(f"{field}[{index}] must be a valid shell command")
             continue
+
+        ensure(
+            not shell_control_tokens.intersection(arguments),
+            f"{field}[{index}] must be a standalone command without shell control operators",
+            errors,
+        )
 
         ensure(
             len(arguments) >= 2 and arguments[1] in declared_commands,

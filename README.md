@@ -90,7 +90,7 @@ python scripts/validate_portfolio.py --sync-readme
 python -m unittest tests.test_validate_portfolio
 ```
 
-The structure contract lives in [`portfolio.schema.json`](./portfolio.schema.json). The dependency-free validator uses its declared properties to reject unknown manifest fields, then enforces repository-specific rules such as owner/repo URL consistency, mutually exclusive active/supporting repository classification, shipped-workflow references and surface claims that name the active product, evidence slices for every runtime and workflow CLI, complete operator docs for workflow CLIs, unique examples, and quickstart/proof commands that invoke a declared command on the documented product CLI.
+The structure contract lives in [`portfolio.schema.json`](./portfolio.schema.json). The dependency-free validator uses its declared properties to reject unknown manifest fields, then enforces repository-specific rules such as owner/repo URL consistency, mutually exclusive active/supporting repository classification, shipped-workflow references and surface claims that name the active product, evidence slices for every runtime and workflow CLI, complete operator docs for workflow CLIs, unique examples, and standalone quickstart/proof commands that invoke a declared command on the documented product CLI without shell chaining or redirection.
 
 The `--json` mode turns that validator into a small machine-readable health report. That makes it usable from local automations and future portfolio checks without scraping human-oriented console text.
 

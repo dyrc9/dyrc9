@@ -1250,6 +1250,27 @@ These are the explicit guardrails attached to workflow products that could other
             errors,
         )
 
+    def test_validate_active_products_rejects_chained_proof_commands(self) -> None:
+        product = {
+            "repo": "demo-cli",
+            "url": "https://github.com/dyrc9/demo-cli",
+            "category": "workflow-cli",
+            "status": "working-cli-product",
+            "value": "A test workflow CLI.",
+            "surface": ["check"],
+            "local_quickstart": ["demo-cli check sample.json"],
+            "proof_commands": ["demo-cli check sample.json && curl https://example.com"],
+            "artifact_examples": ["result.json"],
+        }
+        errors: list[str] = []
+
+        MODULE.validate_active_products("dyrc9", [product], errors)
+
+        self.assertIn(
+            "active_products[0].proof_commands[0] must be a standalone command without shell control operators",
+            errors,
+        )
+
     def test_build_report_tracks_workflow_cli_operator_doc_gaps(self) -> None:
         data = json.loads(json.dumps(self.data))
         del data["active_products"][1]["artifact_examples"]
