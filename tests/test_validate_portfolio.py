@@ -1346,6 +1346,22 @@ These are the explicit guardrails attached to workflow products that could other
             errors,
         )
 
+    def test_validate_workflow_slice_products_requires_declared_cli_command(self) -> None:
+        workflow_slices = json.loads(json.dumps(self.data["shipped_workflow_slices"]))
+        workflow_slices[1]["current_surface"] = "demo-cli publish automation"
+        errors: list[str] = []
+
+        MODULE.validate_workflow_slice_products(
+            workflow_slices,
+            self.data["active_products"],
+            errors,
+        )
+
+        self.assertIn(
+            "shipped_workflow_slices[1].current_surface must name at least one command declared by demo-cli",
+            errors,
+        )
+
     def test_validate_active_product_evidence_requires_runtime_and_cli_slices(self) -> None:
         errors: list[str] = []
 

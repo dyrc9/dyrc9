@@ -768,8 +768,8 @@ def validate_workflow_slice_products(
     if not isinstance(workflow_slices, list) or not isinstance(active_products, list):
         return
 
-    active_repos = {
-        product.get("repo")
+    active_products_by_repo = {
+        product.get("repo"): product
         for product in active_products
         if isinstance(product, dict) and is_non_empty_string(product.get("repo"))
     }
@@ -779,7 +779,7 @@ def validate_workflow_slice_products(
         product_repo = workflow_slice.get("product_repo")
         if is_non_empty_string(product_repo):
             ensure(
-                product_repo in active_repos,
+                product_repo in active_products_by_repo,
                 f"shipped_workflow_slices[{index}].product_repo must reference an active product: {product_repo}",
                 errors,
             )
@@ -790,6 +790,24 @@ def validate_workflow_slice_products(
                     f"shipped_workflow_slices[{index}].current_surface must name its product repo: {product_repo}",
                     errors,
                 )
+
+                product = active_products_by_repo.get(product_repo)
+                if isinstance(product, dict) and product.get("category") == "workflow-cli":
+                    declared_surface = product.get("surface")
+                    if isinstance(declared_surface, list):
+                        comparable_surface = f" {normalize_comparable_text(current_surface)} "
+                        claimed_commands = {
+                            command.strip()
+                            for command in declared_surface
+                            if isinstance(command, str)
+                            and command.strip()
+                            and f" {normalize_comparable_text(command)} " in comparable_surface
+                        }
+                        ensure(
+                            bool(claimed_commands),
+                            f"shipped_workflow_slices[{index}].current_surface must name at least one command declared by {product_repo}",
+                            errors,
+                        )
 
 
 def validate_active_product_evidence(
