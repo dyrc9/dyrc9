@@ -95,6 +95,11 @@ def validate_cli_commands(
             f"{field}[{index}] must be a standalone command without shell control operators",
             errors,
         )
+        ensure(
+            "\n" not in stripped and "\r" not in stripped and "`" not in stripped and "$(" not in stripped,
+            f"{field}[{index}] must not contain command substitution or embedded newlines",
+            errors,
+        )
 
         ensure(
             len(arguments) >= 2 and arguments[1] in declared_commands,
