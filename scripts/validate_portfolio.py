@@ -15,6 +15,7 @@ PORTFOLIO_PATH = ROOT / "portfolio.json"
 SCHEMA_PATH = ROOT / "portfolio.schema.json"
 README_PATH = ROOT / "README.md"
 ALLOWED_ACTIVE_CATEGORIES = {"runtime", "workflow-cli", "public-surface"}
+CLI_COMMAND_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 QUICKSTART_START_MARKER = "<!-- portfolio-quickstarts:start -->"
 QUICKSTART_END_MARKER = "<!-- portfolio-quickstarts:end -->"
 PROOF_COMMANDS_START_MARKER = "<!-- portfolio-proof-commands:start -->"
@@ -661,6 +662,14 @@ def validate_active_products(owner: str, products: object, errors: list[str]) ->
         ensure(is_non_empty_string(product.get("status")), f"{prefix}.status must be a non-empty string", errors)
         ensure(is_non_empty_string(product.get("value")), f"{prefix}.value must be a non-empty string", errors)
         ensure(is_string_list(product.get("surface")), f"{prefix}.surface must be a non-empty list of strings", errors)
+
+        if category == "workflow-cli" and is_string_list(product.get("surface")):
+            for surface_index, command in enumerate(product["surface"]):
+                ensure(
+                    CLI_COMMAND_PATTERN.fullmatch(command.strip()) is not None,
+                    f"{prefix}.surface[{surface_index}] must be a single lowercase CLI command token",
+                    errors,
+                )
 
         url = product.get("url")
         ensure(is_non_empty_string(url), f"{prefix}.url must be a non-empty string", errors)

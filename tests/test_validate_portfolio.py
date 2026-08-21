@@ -1250,6 +1250,31 @@ These are the explicit guardrails attached to workflow products that could other
             errors,
         )
 
+    def test_validate_active_products_requires_cli_surface_command_tokens(self) -> None:
+        product = {
+            "repo": "demo-cli",
+            "url": "https://github.com/dyrc9/demo-cli",
+            "category": "workflow-cli",
+            "status": "working-cli-product",
+            "value": "A test workflow CLI.",
+            "surface": ["doctor", "run sample", "Check"],
+            "local_quickstart": ["demo-cli doctor"],
+            "proof_commands": ["demo-cli doctor --json"],
+            "artifact_examples": ["result.json"],
+        }
+        errors: list[str] = []
+
+        MODULE.validate_active_products("dyrc9", [product], errors)
+
+        self.assertIn(
+            "active_products[0].surface[1] must be a single lowercase CLI command token",
+            errors,
+        )
+        self.assertIn(
+            "active_products[0].surface[2] must be a single lowercase CLI command token",
+            errors,
+        )
+
     def test_validate_active_products_rejects_chained_proof_commands(self) -> None:
         product = {
             "repo": "demo-cli",
