@@ -921,6 +921,43 @@ class ValidatePortfolioSchemaTests(unittest.TestCase):
             errors,
         )
 
+    def test_schema_rejects_missing_nested_required_fields(self) -> None:
+        data = json.loads(json.dumps(self.data))
+        del data["active_products"][0]["status"]
+        errors: list[str] = []
+
+        MODULE.validate_declared_properties(data, self.schema, self.schema, errors)
+
+        self.assertIn(
+            "schema $.active_products[0].status: required property is missing",
+            errors,
+        )
+
+    def test_schema_enforces_declared_array_and_scalar_constraints(self) -> None:
+        data = json.loads(json.dumps(self.data))
+        data["version"] = 0
+        data["workflow_pattern"] = ["source input", "quality gate"]
+        data["active_products"][0]["category"] = "demo"
+        errors: list[str] = []
+
+        MODULE.validate_declared_properties(data, self.schema, self.schema, errors)
+
+        self.assertIn("schema $.version: must be at least 1", errors)
+        self.assertIn("schema $.workflow_pattern: must contain at least 3 item(s)", errors)
+        self.assertIn(
+            "schema $.active_products[0].category: must be one of ['runtime', 'workflow-cli', 'public-surface']",
+            errors,
+        )
+
+    def test_schema_rejects_values_with_wrong_declared_types(self) -> None:
+        data = json.loads(json.dumps(self.data))
+        data["owner"] = 9
+        errors: list[str] = []
+
+        MODULE.validate_declared_properties(data, self.schema, self.schema, errors)
+
+        self.assertIn("schema $.owner: must be of type string", errors)
+
     def test_main_json_rejects_unknown_manifest_fields(self) -> None:
         data = json.loads(json.dumps(self.data))
         data["active_products"][0]["unexpected"] = True

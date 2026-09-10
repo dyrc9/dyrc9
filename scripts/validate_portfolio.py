@@ -140,9 +140,44 @@ def validate_declared_properties(
             errors.append(f"schema definition {path}: {exc}")
             return
 
+    expected_type = schema.get("type")
+    type_checks = {
+        "object": lambda candidate: isinstance(candidate, dict),
+        "array": lambda candidate: isinstance(candidate, list),
+        "string": lambda candidate: isinstance(candidate, str),
+        "integer": lambda candidate: isinstance(candidate, int) and not isinstance(candidate, bool),
+    }
+    if isinstance(expected_type, str) and expected_type in type_checks:
+        if not type_checks[expected_type](value):
+            errors.append(f"schema {path}: must be of type {expected_type}")
+            return
+
+    allowed_values = schema.get("enum")
+    if isinstance(allowed_values, list) and value not in allowed_values:
+        errors.append(f"schema {path}: must be one of {allowed_values}")
+
+    if isinstance(value, str):
+        min_length = schema.get("minLength")
+        if isinstance(min_length, int) and len(value) < min_length:
+            errors.append(f"schema {path}: must contain at least {min_length} character(s)")
+
+        pattern = schema.get("pattern")
+        if isinstance(pattern, str) and re.search(pattern, value) is None:
+            errors.append(f"schema {path}: must match pattern {pattern}")
+
+    if isinstance(value, int) and not isinstance(value, bool):
+        minimum = schema.get("minimum")
+        if isinstance(minimum, (int, float)) and value < minimum:
+            errors.append(f"schema {path}: must be at least {minimum}")
+
     if isinstance(value, dict):
         properties = schema.get("properties")
         declared_properties = properties if isinstance(properties, dict) else {}
+        required = schema.get("required")
+        if isinstance(required, list):
+            for property_name in required:
+                if isinstance(property_name, str) and property_name not in value:
+                    errors.append(f"schema {path}.{property_name}: required property is missing")
         if schema.get("additionalProperties") is False:
             for property_name in sorted(set(value).difference(declared_properties)):
                 errors.append(f"schema {path}.{property_name}: undeclared property is not allowed")
@@ -158,6 +193,10 @@ def validate_declared_properties(
                 )
 
     if isinstance(value, list):
+        min_items = schema.get("minItems")
+        if isinstance(min_items, int) and len(value) < min_items:
+            errors.append(f"schema {path}: must contain at least {min_items} item(s)")
+
         items = schema.get("items")
         if isinstance(items, dict):
             for index, item in enumerate(value):
