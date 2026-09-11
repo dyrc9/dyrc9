@@ -958,6 +958,28 @@ class ValidatePortfolioSchemaTests(unittest.TestCase):
 
         self.assertIn("schema $.owner: must be of type string", errors)
 
+    def test_schema_enforces_declared_uri_format(self) -> None:
+        schema = {"type": "string", "format": "uri"}
+
+        valid_errors: list[str] = []
+        MODULE.validate_declared_properties(
+            "https://github.com/dyrc9/demo-agent",
+            schema,
+            schema,
+            valid_errors,
+        )
+
+        invalid_errors: list[str] = []
+        MODULE.validate_declared_properties(
+            "github.com/dyrc9/demo agent",
+            schema,
+            schema,
+            invalid_errors,
+        )
+
+        self.assertEqual(valid_errors, [])
+        self.assertEqual(invalid_errors, ["schema $: must be an absolute URI"])
+
     def test_main_json_rejects_unknown_manifest_fields(self) -> None:
         data = json.loads(json.dumps(self.data))
         data["active_products"][0]["unexpected"] = True

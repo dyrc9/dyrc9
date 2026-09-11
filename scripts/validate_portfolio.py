@@ -8,6 +8,7 @@ import shlex
 import sys
 from collections import Counter
 from pathlib import Path
+from urllib.parse import urlsplit
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -49,6 +50,18 @@ def is_non_empty_string(value: object) -> bool:
 
 def is_string_list(value: object) -> bool:
     return isinstance(value, list) and bool(value) and all(is_non_empty_string(item) for item in value)
+
+
+def is_absolute_uri(value: str) -> bool:
+    if any(character.isspace() for character in value):
+        return False
+
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return False
+
+    return bool(parsed.scheme and re.fullmatch(r"[A-Za-z][A-Za-z0-9+.-]*", parsed.scheme))
 
 
 def validate_unique_string_list(value: object, field: str, errors: list[str]) -> None:
@@ -164,6 +177,10 @@ def validate_declared_properties(
         pattern = schema.get("pattern")
         if isinstance(pattern, str) and re.search(pattern, value) is None:
             errors.append(f"schema {path}: must match pattern {pattern}")
+
+        value_format = schema.get("format")
+        if value_format == "uri" and not is_absolute_uri(value):
+            errors.append(f"schema {path}: must be an absolute URI")
 
     if isinstance(value, int) and not isinstance(value, bool):
         minimum = schema.get("minimum")
