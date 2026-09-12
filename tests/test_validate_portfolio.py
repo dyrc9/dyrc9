@@ -980,6 +980,32 @@ class ValidatePortfolioSchemaTests(unittest.TestCase):
         self.assertEqual(valid_errors, [])
         self.assertEqual(invalid_errors, ["schema $: must be an absolute URI"])
 
+    def test_schema_enforces_unique_array_items(self) -> None:
+        schema = {"type": "array", "uniqueItems": True}
+        errors: list[str] = []
+
+        MODULE.validate_declared_properties(
+            [{"command": "run"}, {"command": "run"}],
+            schema,
+            schema,
+            errors,
+        )
+
+        self.assertEqual(errors, ["schema $[1]: duplicate array item is not allowed"])
+
+    def test_manifest_schema_rejects_duplicate_string_list_items(self) -> None:
+        data = json.loads(json.dumps(self.data))
+        duplicate_index = len(data["active_products"][0]["surface"])
+        data["active_products"][0]["surface"].append(data["active_products"][0]["surface"][0])
+        errors: list[str] = []
+
+        MODULE.validate_declared_properties(data, self.schema, self.schema, errors)
+
+        self.assertIn(
+            f"schema $.active_products[0].surface[{duplicate_index}]: duplicate array item is not allowed",
+            errors,
+        )
+
     def test_main_json_rejects_unknown_manifest_fields(self) -> None:
         data = json.loads(json.dumps(self.data))
         data["active_products"][0]["unexpected"] = True

@@ -214,6 +214,11 @@ def validate_declared_properties(
         if isinstance(min_items, int) and len(value) < min_items:
             errors.append(f"schema {path}: must contain at least {min_items} item(s)")
 
+        if schema.get("uniqueItems") is True:
+            for index, item in enumerate(value):
+                if any(item == previous for previous in value[:index]):
+                    errors.append(f"schema {path}[{index}]: duplicate array item is not allowed")
+
         items = schema.get("items")
         if isinstance(items, dict):
             for index, item in enumerate(value):
