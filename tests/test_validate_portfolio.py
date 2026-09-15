@@ -893,9 +893,65 @@ class ValidatePortfolioSchemaTests(unittest.TestCase):
     def test_schema_accepts_current_manifest(self) -> None:
         errors: list[str] = []
 
+        MODULE.validate_schema_contract(self.schema, errors)
         MODULE.validate_declared_properties(self.data, self.schema, self.schema, errors)
 
         self.assertEqual(errors, [])
+
+    def test_schema_contract_rejects_unsupported_keywords(self) -> None:
+        schema = {
+            "type": "object",
+            "properties": {
+                "owner": {"type": "string", "maxLength": 20},
+            },
+        }
+        errors: list[str] = []
+
+        MODULE.validate_schema_contract(schema, errors)
+
+        self.assertEqual(
+            errors,
+            ["schema definition $.properties.owner: unsupported keyword maxLength"],
+        )
+
+    def test_schema_contract_rejects_unsupported_types_and_formats(self) -> None:
+        schema = {
+            "type": "object",
+            "$defs": {
+                "enabled": {"type": "boolean"},
+                "contact": {"type": "string", "format": "email"},
+            },
+        }
+        errors: list[str] = []
+
+        MODULE.validate_schema_contract(schema, errors)
+
+        self.assertEqual(
+            errors,
+            [
+                "schema definition $.$defs.enabled.type: unsupported type boolean",
+                "schema definition $.$defs.contact.format: unsupported format email",
+            ],
+        )
+
+    def test_schema_contract_rejects_unresolved_local_references(self) -> None:
+        schema = {
+            "type": "object",
+            "properties": {
+                "owner": {"$ref": "#/$defs/missing"},
+            },
+        }
+        errors: list[str] = []
+
+        MODULE.validate_schema_contract(schema, errors)
+
+        self.assertEqual(
+            errors,
+            [
+                "schema definition $.properties.owner.$ref: "
+                "unresolved schema reference: #/$defs/missing"
+            ],
+        )
 
     def test_schema_rejects_unknown_product_fields(self) -> None:
         data = json.loads(json.dumps(self.data))

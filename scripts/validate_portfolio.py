@@ -27,6 +27,27 @@ SAFETY_NOTES_START_MARKER = "<!-- portfolio-safety-notes:start -->"
 SAFETY_NOTES_END_MARKER = "<!-- portfolio-safety-notes:end -->"
 NEXT_TARGETS_START_MARKER = "<!-- portfolio-next-targets:start -->"
 NEXT_TARGETS_END_MARKER = "<!-- portfolio-next-targets:end -->"
+SUPPORTED_SCHEMA_KEYWORDS = {
+    "$defs",
+    "$id",
+    "$ref",
+    "$schema",
+    "additionalProperties",
+    "enum",
+    "format",
+    "items",
+    "minimum",
+    "minItems",
+    "minLength",
+    "pattern",
+    "properties",
+    "required",
+    "title",
+    "type",
+    "uniqueItems",
+}
+SUPPORTED_SCHEMA_TYPES = {"array", "integer", "object", "string"}
+SUPPORTED_SCHEMA_FORMATS = {"uri"}
 
 
 def load_json(path: Path) -> object:
@@ -136,6 +157,46 @@ def resolve_local_schema_ref(root_schema: dict[str, object], reference: str) -> 
     if not isinstance(current, dict):
         raise ValueError(f"schema reference must resolve to an object: {reference}")
     return current
+
+
+def validate_schema_contract(
+    schema: dict[str, object],
+    errors: list[str],
+    path: str = "$",
+    root_schema: dict[str, object] | None = None,
+) -> None:
+    """Fail closed when the manifest schema uses constraints this validator ignores."""
+    if root_schema is None:
+        root_schema = schema
+
+    for keyword in sorted(set(schema).difference(SUPPORTED_SCHEMA_KEYWORDS)):
+        errors.append(f"schema definition {path}: unsupported keyword {keyword}")
+
+    expected_type = schema.get("type")
+    if isinstance(expected_type, str) and expected_type not in SUPPORTED_SCHEMA_TYPES:
+        errors.append(f"schema definition {path}.type: unsupported type {expected_type}")
+
+    value_format = schema.get("format")
+    if isinstance(value_format, str) and value_format not in SUPPORTED_SCHEMA_FORMATS:
+        errors.append(f"schema definition {path}.format: unsupported format {value_format}")
+
+    reference = schema.get("$ref")
+    if isinstance(reference, str):
+        try:
+            resolve_local_schema_ref(root_schema, reference)
+        except ValueError as exc:
+            errors.append(f"schema definition {path}.$ref: {exc}")
+
+    for container_name in ("properties", "$defs"):
+        container = schema.get(container_name)
+        if isinstance(container, dict):
+            for name, child_schema in container.items():
+                if isinstance(child_schema, dict):
+                    validate_schema_contract(child_schema, errors, f"{path}.{container_name}.{name}", root_schema)
+
+    items = schema.get("items")
+    if isinstance(items, dict):
+        validate_schema_contract(items, errors, f"{path}.items", root_schema)
 
 
 def validate_declared_properties(
@@ -1296,6 +1357,7 @@ def main(argv: list[str] | None = None) -> int:
     ensure(isinstance(schema, dict), "portfolio.schema.json must contain a top-level object", errors)
 
     if isinstance(schema, dict):
+        validate_schema_contract(schema, errors)
         validate_declared_properties(data, schema, schema, errors)
 
     if not isinstance(data, dict):
