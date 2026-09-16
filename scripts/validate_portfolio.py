@@ -172,16 +172,63 @@ def validate_schema_contract(
     for keyword in sorted(set(schema).difference(SUPPORTED_SCHEMA_KEYWORDS)):
         errors.append(f"schema definition {path}: unsupported keyword {keyword}")
 
+    string_keywords = ("$id", "$schema", "title", "pattern")
+    for keyword in string_keywords:
+        if keyword in schema and not isinstance(schema[keyword], str):
+            errors.append(f"schema definition {path}.{keyword}: must be a string")
+
+    for keyword in ("additionalProperties", "uniqueItems"):
+        if keyword in schema and not isinstance(schema[keyword], bool):
+            errors.append(f"schema definition {path}.{keyword}: must be a boolean")
+
+    for keyword in ("minItems", "minLength"):
+        constraint = schema.get(keyword)
+        if keyword in schema and (
+            not isinstance(constraint, int) or isinstance(constraint, bool) or constraint < 0
+        ):
+            errors.append(f"schema definition {path}.{keyword}: must be a non-negative integer")
+
+    minimum = schema.get("minimum")
+    if "minimum" in schema and (
+        not isinstance(minimum, (int, float)) or isinstance(minimum, bool)
+    ):
+        errors.append(f"schema definition {path}.minimum: must be a number")
+
+    enum = schema.get("enum")
+    if "enum" in schema and (not isinstance(enum, list) or not enum):
+        errors.append(f"schema definition {path}.enum: must be a non-empty array")
+
+    required = schema.get("required")
+    if "required" in schema and (
+        not isinstance(required, list)
+        or any(not isinstance(item, str) for item in required)
+        or len(required) != len(set(required))
+    ):
+        errors.append(f"schema definition {path}.required: must be an array of unique strings")
+
+    pattern = schema.get("pattern")
+    if isinstance(pattern, str):
+        try:
+            re.compile(pattern)
+        except re.error as exc:
+            errors.append(f"schema definition {path}.pattern: invalid regular expression: {exc}")
+
     expected_type = schema.get("type")
-    if isinstance(expected_type, str) and expected_type not in SUPPORTED_SCHEMA_TYPES:
+    if "type" in schema and not isinstance(expected_type, str):
+        errors.append(f"schema definition {path}.type: must be a string")
+    elif isinstance(expected_type, str) and expected_type not in SUPPORTED_SCHEMA_TYPES:
         errors.append(f"schema definition {path}.type: unsupported type {expected_type}")
 
     value_format = schema.get("format")
-    if isinstance(value_format, str) and value_format not in SUPPORTED_SCHEMA_FORMATS:
+    if "format" in schema and not isinstance(value_format, str):
+        errors.append(f"schema definition {path}.format: must be a string")
+    elif isinstance(value_format, str) and value_format not in SUPPORTED_SCHEMA_FORMATS:
         errors.append(f"schema definition {path}.format: unsupported format {value_format}")
 
     reference = schema.get("$ref")
-    if isinstance(reference, str):
+    if "$ref" in schema and not isinstance(reference, str):
+        errors.append(f"schema definition {path}.$ref: must be a string")
+    elif isinstance(reference, str):
         try:
             resolve_local_schema_ref(root_schema, reference)
         except ValueError as exc:
@@ -189,13 +236,21 @@ def validate_schema_contract(
 
     for container_name in ("properties", "$defs"):
         container = schema.get(container_name)
-        if isinstance(container, dict):
+        if container_name in schema and not isinstance(container, dict):
+            errors.append(f"schema definition {path}.{container_name}: must be an object")
+        elif isinstance(container, dict):
             for name, child_schema in container.items():
                 if isinstance(child_schema, dict):
                     validate_schema_contract(child_schema, errors, f"{path}.{container_name}.{name}", root_schema)
+                else:
+                    errors.append(
+                        f"schema definition {path}.{container_name}.{name}: must be an object"
+                    )
 
     items = schema.get("items")
-    if isinstance(items, dict):
+    if "items" in schema and not isinstance(items, dict):
+        errors.append(f"schema definition {path}.items: must be an object")
+    elif isinstance(items, dict):
         validate_schema_contract(items, errors, f"{path}.items", root_schema)
 
 

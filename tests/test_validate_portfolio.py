@@ -953,6 +953,39 @@ class ValidatePortfolioSchemaTests(unittest.TestCase):
             ],
         )
 
+    def test_schema_contract_rejects_malformed_supported_constraints(self) -> None:
+        schema = {
+            "type": ["string", "null"],
+            "minLength": -1,
+            "uniqueItems": "yes",
+            "required": ["owner", "owner"],
+            "properties": {"owner": "string"},
+            "items": [],
+        }
+        errors: list[str] = []
+
+        MODULE.validate_schema_contract(schema, errors)
+
+        self.assertEqual(
+            errors,
+            [
+                "schema definition $.uniqueItems: must be a boolean",
+                "schema definition $.minLength: must be a non-negative integer",
+                "schema definition $.required: must be an array of unique strings",
+                "schema definition $.type: must be a string",
+                "schema definition $.properties.owner: must be an object",
+                "schema definition $.items: must be an object",
+            ],
+        )
+
+    def test_schema_contract_rejects_invalid_regular_expressions(self) -> None:
+        errors: list[str] = []
+
+        MODULE.validate_schema_contract({"type": "string", "pattern": "["}, errors)
+
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(errors[0].startswith("schema definition $.pattern: invalid regular expression:"))
+
     def test_schema_rejects_unknown_product_fields(self) -> None:
         data = json.loads(json.dumps(self.data))
         data["active_products"][0]["proof_command"] = ["typo should fail closed"]
