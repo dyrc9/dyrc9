@@ -953,6 +953,31 @@ class ValidatePortfolioSchemaTests(unittest.TestCase):
             ],
         )
 
+    def test_schema_contract_rejects_reference_sibling_constraints(self) -> None:
+        schema = {
+            "$defs": {
+                "name": {"type": "string", "minLength": 1},
+            },
+            "type": "object",
+            "properties": {
+                "owner": {
+                    "$ref": "#/$defs/name",
+                    "pattern": "^[a-z0-9-]+$",
+                },
+            },
+        }
+        errors: list[str] = []
+
+        MODULE.validate_schema_contract(schema, errors)
+
+        self.assertEqual(
+            errors,
+            [
+                "schema definition $.properties.owner.$ref: "
+                "must not have sibling keywords: pattern"
+            ],
+        )
+
     def test_schema_contract_rejects_malformed_supported_constraints(self) -> None:
         schema = {
             "type": ["string", "null"],

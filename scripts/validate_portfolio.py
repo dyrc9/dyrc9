@@ -229,6 +229,12 @@ def validate_schema_contract(
     if "$ref" in schema and not isinstance(reference, str):
         errors.append(f"schema definition {path}.$ref: must be a string")
     elif isinstance(reference, str):
+        sibling_keywords = sorted(set(schema).difference({"$ref"}))
+        if sibling_keywords:
+            errors.append(
+                f"schema definition {path}.$ref: must not have sibling keywords: "
+                f"{', '.join(sibling_keywords)}"
+            )
         try:
             resolve_local_schema_ref(root_schema, reference)
         except ValueError as exc:
