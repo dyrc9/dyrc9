@@ -48,6 +48,12 @@ SUPPORTED_SCHEMA_KEYWORDS = {
 }
 SUPPORTED_SCHEMA_TYPES = {"array", "integer", "object", "string"}
 SUPPORTED_SCHEMA_FORMATS = {"uri"}
+TYPE_SPECIFIC_SCHEMA_KEYWORDS = {
+    "array": {"items", "minItems", "uniqueItems"},
+    "integer": {"minimum"},
+    "object": {"additionalProperties", "properties", "required"},
+    "string": {"format", "minLength", "pattern"},
+}
 
 
 def load_json(path: Path) -> object:
@@ -218,6 +224,19 @@ def validate_schema_contract(
         errors.append(f"schema definition {path}.type: must be a string")
     elif isinstance(expected_type, str) and expected_type not in SUPPORTED_SCHEMA_TYPES:
         errors.append(f"schema definition {path}.type: unsupported type {expected_type}")
+    elif isinstance(expected_type, str):
+        incompatible_keywords = sorted(
+            keyword
+            for schema_type, keywords in TYPE_SPECIFIC_SCHEMA_KEYWORDS.items()
+            if schema_type != expected_type
+            for keyword in keywords
+            if keyword in schema
+        )
+        if incompatible_keywords:
+            errors.append(
+                f"schema definition {path}: keywords incompatible with type {expected_type}: "
+                f"{', '.join(incompatible_keywords)}"
+            )
 
     value_format = schema.get("format")
     if "format" in schema and not isinstance(value_format, str):

@@ -1011,6 +1011,31 @@ class ValidatePortfolioSchemaTests(unittest.TestCase):
         self.assertEqual(len(errors), 1)
         self.assertTrue(errors[0].startswith("schema definition $.pattern: invalid regular expression:"))
 
+    def test_schema_contract_rejects_constraints_for_another_type(self) -> None:
+        schema = {
+            "type": "object",
+            "properties": {
+                "version": {"type": "integer", "minLength": 1},
+                "owner": {"type": "string", "minimum": 1},
+                "targets": {"type": "array", "required": ["name"]},
+            },
+        }
+        errors: list[str] = []
+
+        MODULE.validate_schema_contract(schema, errors)
+
+        self.assertEqual(
+            errors,
+            [
+                "schema definition $.properties.version: "
+                "keywords incompatible with type integer: minLength",
+                "schema definition $.properties.owner: "
+                "keywords incompatible with type string: minimum",
+                "schema definition $.properties.targets: "
+                "keywords incompatible with type array: required",
+            ],
+        )
+
     def test_schema_rejects_unknown_product_fields(self) -> None:
         data = json.loads(json.dumps(self.data))
         data["active_products"][0]["proof_command"] = ["typo should fail closed"]
