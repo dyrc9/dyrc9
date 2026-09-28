@@ -1036,6 +1036,30 @@ class ValidatePortfolioSchemaTests(unittest.TestCase):
             ],
         )
 
+    def test_schema_contract_rejects_inconsistent_required_and_enum_constraints(self) -> None:
+        schema = {
+            "type": "object",
+            "required": ["owner", "missing"],
+            "properties": {
+                "owner": {
+                    "type": "string",
+                    "enum": ["dyrc9", "dyrc9", 9],
+                },
+            },
+        }
+        errors: list[str] = []
+
+        MODULE.validate_schema_contract(schema, errors)
+
+        self.assertEqual(
+            errors,
+            [
+                "schema definition $.required: properties are not declared: missing",
+                "schema definition $.properties.owner.enum: values must be unique",
+                "schema definition $.properties.owner.enum: values must match declared type string",
+            ],
+        )
+
     def test_schema_rejects_unknown_product_fields(self) -> None:
         data = json.loads(json.dumps(self.data))
         data["active_products"][0]["proof_command"] = ["typo should fail closed"]

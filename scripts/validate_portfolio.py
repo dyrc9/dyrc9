@@ -203,6 +203,12 @@ def validate_schema_contract(
     enum = schema.get("enum")
     if "enum" in schema and (not isinstance(enum, list) or not enum):
         errors.append(f"schema definition {path}.enum: must be a non-empty array")
+    elif isinstance(enum, list) and any(
+        item == previous
+        for index, item in enumerate(enum)
+        for previous in enum[:index]
+    ):
+        errors.append(f"schema definition {path}.enum: values must be unique")
 
     required = schema.get("required")
     if "required" in schema and (
@@ -236,6 +242,28 @@ def validate_schema_contract(
             errors.append(
                 f"schema definition {path}: keywords incompatible with type {expected_type}: "
                 f"{', '.join(incompatible_keywords)}"
+            )
+
+        type_checks = {
+            "array": lambda candidate: isinstance(candidate, list),
+            "integer": lambda candidate: isinstance(candidate, int) and not isinstance(candidate, bool),
+            "object": lambda candidate: isinstance(candidate, dict),
+            "string": lambda candidate: isinstance(candidate, str),
+        }
+        if isinstance(enum, list) and any(not type_checks[expected_type](item) for item in enum):
+            errors.append(
+                f"schema definition {path}.enum: values must match declared type {expected_type}"
+            )
+
+    properties = schema.get("properties")
+    if isinstance(required, list) and isinstance(properties, dict):
+        undeclared_required = sorted(
+            item for item in required if isinstance(item, str) and item not in properties
+        )
+        if undeclared_required:
+            errors.append(
+                f"schema definition {path}.required: properties are not declared: "
+                f"{', '.join(undeclared_required)}"
             )
 
     value_format = schema.get("format")
