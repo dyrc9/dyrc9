@@ -165,6 +165,27 @@ def resolve_local_schema_ref(root_schema: dict[str, object], reference: str) -> 
     return current
 
 
+def validate_local_ref_chain(
+    root_schema: dict[str, object],
+    reference: str,
+) -> str | None:
+    """Return an error when a direct $ref chain loops forever."""
+    seen: list[str] = []
+    current_reference = reference
+
+    while True:
+        if current_reference in seen:
+            cycle = seen[seen.index(current_reference):] + [current_reference]
+            return f"cyclic schema reference: {' -> '.join(cycle)}"
+        seen.append(current_reference)
+
+        target = resolve_local_schema_ref(root_schema, current_reference)
+        next_reference = target.get("$ref")
+        if not isinstance(next_reference, str):
+            return None
+        current_reference = next_reference
+
+
 def validate_schema_contract(
     schema: dict[str, object],
     errors: list[str],
@@ -283,7 +304,9 @@ def validate_schema_contract(
                 f"{', '.join(sibling_keywords)}"
             )
         try:
-            resolve_local_schema_ref(root_schema, reference)
+            reference_error = validate_local_ref_chain(root_schema, reference)
+            if reference_error is not None:
+                errors.append(f"schema definition {path}.$ref: {reference_error}")
         except ValueError as exc:
             errors.append(f"schema definition {path}.$ref: {exc}")
 
@@ -1465,8 +1488,11 @@ def main(argv: list[str] | None = None) -> int:
     ensure(isinstance(schema, dict), "portfolio.schema.json must contain a top-level object", errors)
 
     if isinstance(schema, dict):
-        validate_schema_contract(schema, errors)
-        validate_declared_properties(data, schema, schema, errors)
+        schema_errors: list[str] = []
+        validate_schema_contract(schema, schema_errors)
+        errors.extend(schema_errors)
+        if not schema_errors:
+            validate_declared_properties(data, schema, schema, errors)
 
     if not isinstance(data, dict):
         report = {"ok": False, "errors": errors}

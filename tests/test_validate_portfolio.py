@@ -978,6 +978,45 @@ class ValidatePortfolioSchemaTests(unittest.TestCase):
             ],
         )
 
+    def test_schema_contract_rejects_cyclic_reference_chains(self) -> None:
+        schema = {
+            "$defs": {
+                "first": {"$ref": "#/$defs/second"},
+                "second": {"$ref": "#/$defs/first"},
+            },
+            "type": "object",
+            "properties": {
+                "owner": {"$ref": "#/$defs/first"},
+            },
+        }
+        errors: list[str] = []
+
+        MODULE.validate_schema_contract(schema, errors)
+
+        self.assertTrue(errors)
+        self.assertTrue(all("cyclic schema reference" in error for error in errors))
+        self.assertIn("#/$defs/first -> #/$defs/second -> #/$defs/first", errors[0])
+
+    def test_cli_rejects_cyclic_schema_without_resolving_manifest(self) -> None:
+        schema = {
+            "$defs": {
+                "loop": {"$ref": "#/$defs/loop"},
+            },
+            "$ref": "#/$defs/loop",
+        }
+
+        with (
+            mock.patch.object(MODULE, "load_json", side_effect=[self.data, schema]),
+            mock.patch.object(MODULE, "load_text", return_value=""),
+            mock.patch.object(MODULE, "validate_declared_properties") as validate_values,
+            contextlib.redirect_stdout(io.StringIO()),
+            contextlib.redirect_stderr(io.StringIO()),
+        ):
+            exit_code = MODULE.main([])
+
+        self.assertEqual(exit_code, 1)
+        validate_values.assert_not_called()
+
     def test_schema_contract_rejects_malformed_supported_constraints(self) -> None:
         schema = {
             "type": ["string", "null"],
