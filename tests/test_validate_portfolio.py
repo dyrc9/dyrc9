@@ -1182,6 +1182,20 @@ class ValidatePortfolioSchemaTests(unittest.TestCase):
         self.assertEqual(valid_errors, [])
         self.assertEqual(invalid_errors, ["schema $: must be an absolute URI"])
 
+    def test_schema_enforces_constraints_through_reference_chains(self) -> None:
+        schema = {
+            "$defs": {
+                "owner": {"$ref": "#/$defs/nonEmptyString"},
+                "nonEmptyString": {"type": "string", "minLength": 1},
+            },
+            "$ref": "#/$defs/owner",
+        }
+        errors: list[str] = []
+
+        MODULE.validate_declared_properties("", schema, schema, errors)
+
+        self.assertEqual(errors, ["schema $: must contain at least 1 character(s)"])
+
     def test_schema_enforces_unique_array_items(self) -> None:
         schema = {"type": "array", "uniqueItems": True}
         errors: list[str] = []

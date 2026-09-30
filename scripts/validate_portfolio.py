@@ -337,8 +337,12 @@ def validate_declared_properties(
     errors: list[str],
     path: str = "$",
 ) -> None:
-    reference = schema.get("$ref")
-    if isinstance(reference, str):
+    seen_references: set[str] = set()
+    while isinstance(reference := schema.get("$ref"), str):
+        if reference in seen_references:
+            errors.append(f"schema definition {path}: cyclic schema reference: {reference}")
+            return
+        seen_references.add(reference)
         try:
             schema = resolve_local_schema_ref(root_schema, reference)
         except ValueError as exc:
